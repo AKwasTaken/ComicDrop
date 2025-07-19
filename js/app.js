@@ -3,231 +3,32 @@
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', function() {
   initializeApp();
-  // Add minimalistic arrows
-  const leftArrow = document.createElement('button');
-  leftArrow.id = 'edgeLeftArrow';
-  leftArrow.innerHTML = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="14" fill="rgba(0,0,0,0.18)"/><path d="M17.5 7L11 14L17.5 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  leftArrow.title = 'Previous Page';
-  leftArrow.style.position = 'fixed';
-  leftArrow.style.left = '10px';
-  leftArrow.style.top = '50%';
-  leftArrow.style.transform = 'translateY(-50%)';
-  leftArrow.style.zIndex = '1001';
-  leftArrow.style.background = 'none';
-  leftArrow.style.border = 'none';
-  leftArrow.style.padding = '0';
-  leftArrow.style.cursor = 'pointer';
-  leftArrow.style.opacity = '0.8';
-  leftArrow.style.display = 'none';
-  leftArrow.style.width = '64px';
-  leftArrow.style.height = '64px';
-
-  const rightArrow = document.createElement('button');
-  rightArrow.id = 'edgeRightArrow';
-  rightArrow.innerHTML = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="14" fill="rgba(0,0,0,0.18)"/><path d="M10.5 7L17 14L10.5 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  rightArrow.title = 'Next Page';
-  rightArrow.style.position = 'fixed';
-  rightArrow.style.right = '10px';
-  rightArrow.style.top = '50%';
-  rightArrow.style.transform = 'translateY(-50%)';
-  rightArrow.style.zIndex = '1001';
-  rightArrow.style.background = 'none';
-  rightArrow.style.border = 'none';
-  rightArrow.style.padding = '0';
-  rightArrow.style.cursor = 'pointer';
-  rightArrow.style.opacity = '0.8';
-  rightArrow.style.display = 'none';
-  rightArrow.style.width = '64px';
-  rightArrow.style.height = '64px';
-
-  document.body.appendChild(leftArrow);
-  document.body.appendChild(rightArrow);
-
-  // 1. Increase the size of the edge navigation arrows
-  leftArrow.querySelector('svg').setAttribute('width', '48');
-  leftArrow.querySelector('svg').setAttribute('height', '48');
-  rightArrow.querySelector('svg').setAttribute('width', '48');
-  rightArrow.querySelector('svg').setAttribute('height', '48');
-
-  // Navigation logic for arrows
-  leftArrow.addEventListener('click', function(e) {
-    e.preventDefault();
-    if (window._comicReader() && window._comicReader().prevPage) window._comicReader().prevPage();
-  });
-  rightArrow.addEventListener('click', function(e) {
-    e.preventDefault();
-    if (window._comicReader() && window._comicReader().nextPage) window._comicReader().nextPage();
-  });
-
-  // Show/hide arrows when reader is visible
-  const showArrows = () => {
-    leftArrow.style.display = 'block';
-    rightArrow.style.display = 'block';
-  };
-  const hideArrows = () => {
-    leftArrow.style.display = 'none';
-    rightArrow.style.display = 'none';
-  };
-
-  // 3. Tap-to-hide/show UI elements
-  let uiHidden = false;
-  function setUIHidden(hidden) {
-    uiHidden = hidden;
-    // Hide/show nav controls
-    if (document.getElementById('navControls')) {
-      document.getElementById('navControls').style.display = hidden ? 'none' : '';
-    }
-    // Hide/show site header
-    if (document.getElementById('siteHeader')) {
-      document.getElementById('siteHeader').style.display = hidden ? 'none' : '';
-    }
-    // Hide/show arrows
-    if (hidden) {
-      hideArrows();
-    } else {
-      showArrows();
-    }
-    // Hide/show fileNameBar
-    if (document.getElementById('fileNameBar')) {
-      document.getElementById('fileNameBar').style.display = hidden ? 'none' : 'block';
-    }
-  }
-
-  // Tap/click anywhere on the reader container toggles UI
-  if (document.getElementById('readerContainer')) {
-    document.getElementById('readerContainer').addEventListener('click', function(e) {
-      // Only toggle if not clicking on nav controls or arrows
-      if (e.target.closest('#navControls') || e.target.closest('#edgeLeftArrow') || e.target.closest('#edgeRightArrow')) return;
-      setUIHidden(!uiHidden);
-    });
-  }
-
-  // Show arrows when reader is shown, hide otherwise
-  const origShowReader = ui.showReader.bind(ui);
-  ui.showReader = function() {
-    origShowReader();
-    const fileNameBar = document.getElementById('fileNameBar');
-    if (fileNameBar) {
-      fileNameBar.textContent = window.currentFileName || '';
-      fileNameBar.style.display = uiHidden ? 'none' : 'block';
-    }
-    showArrows();
-    setUIHidden(false);
-  };
-  const origResetUI = ui.resetUI.bind(ui);
-  ui.resetUI = function() {
-    origResetUI();
-    hideArrows();
-    setUIHidden(false);
-  };
-
-  // 3. Add file name display at the top, which hides with UI
-  if (!document.getElementById('fileNameBar')) {
-    const fileNameBar = document.createElement('div');
-    fileNameBar.id = 'fileNameBar';
-    fileNameBar.style.position = 'fixed';
-    fileNameBar.style.top = '0';
-    fileNameBar.style.left = '0';
-    fileNameBar.style.right = '0';
-    fileNameBar.style.zIndex = '1002';
-    fileNameBar.style.background = 'rgba(0,0,0,0.7)';
-    fileNameBar.style.color = '#fff';
-    fileNameBar.style.fontSize = '1.3em';
-    fileNameBar.style.fontWeight = '600';
-    fileNameBar.style.textAlign = 'center';
-    fileNameBar.style.padding = '12px 0 8px 0';
-    fileNameBar.style.display = 'none';
-    document.body.appendChild(fileNameBar);
-  }
-
-  // Remove previous fileHandler.processFile override for fileNameBar
-  // Instead, set the file name globally and update in ui.showReader
-  window.currentFileName = '';
 });
 
 function initializeApp() {
-  // DOM Elements - cache all at once
-  const elements = {
-    dropZone: document.getElementById('dropZone'),
-    fileInput: document.getElementById('fileInput'),
-    progressContainer: document.getElementById('progressContainer'),
-    progressBar: document.getElementById('progressBar'),
-    progressText: document.getElementById('progressText'),
-    errorContainer: document.getElementById('errorContainer'),
-    readerContainer: document.getElementById('readerContainer'),
-    comicPage: document.getElementById('comicPage'),
-    siteHeader: document.getElementById('siteHeader'),
-    navControls: document.getElementById('navControls'),
-    fileLabel: document.querySelector('.file-label')
-    // Removed: zoomIndicator
-  };
-
-  // State management
+  // App state
   const state = {
     comicReader: null,
-    // Removed: zoomLevel, fitMode, zoomState
-    isEditingPage: false,
-    isPanning: false,
-    panStart: { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 }
+    isEditingPage: false
   };
 
-  // Utility functions
-  const utils = {
-    showError(message) {
-      console.error('Error:', message);
-      if (elements.errorContainer) {
-        elements.errorContainer.textContent = message;
-        elements.errorContainer.style.display = 'flex';
-        setTimeout(() => {
-          if (elements.errorContainer) elements.errorContainer.style.display = 'none';
-        }, 4000);
-      }
-    },
+  // Minimal utils fallback if not already defined
+  const utils = window.utils || {
+    hideProgress: () => {},
+    showProgress: () => {},
+    showError: (msg) => { alert(msg); },
+    resetEditingState: () => { state.isEditingPage = false; }
+  };
 
-    showProgress(percent, text) {
-      if (elements.progressContainer && elements.progressBar && elements.progressText) {
-        elements.progressContainer.style.display = 'flex';
-        elements.progressBar.style.width = percent + '%';
-        elements.progressText.textContent = text || '';
-      }
-    },
-
-    hideProgress() {
-      if (elements.progressContainer && elements.progressBar && elements.progressText) {
-        elements.progressContainer.style.display = 'none';
-        elements.progressBar.style.width = '0%';
-        elements.progressText.textContent = '';
-      }
-    },
-
-    resetEditingState() {
-      state.isEditingPage = false;
-      if (elements.navControls) {
-        elements.navControls.classList.remove('editing');
-      }
-    },
-
-    // Easing functions for smooth animations
-    easeOutCubic(t) {
-      return 1 - Math.pow(1 - t, 3);
-    },
-
-    easeInOutCubic(t) {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    },
-
-    // Debounce function
-    debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
+  // Cache DOM elements by ID
+  const elements = {
+    dropZone: document.getElementById('dropZone'),
+    readerContainer: document.getElementById('readerContainer'),
+    siteHeader: document.getElementById('siteHeader'),
+    navControls: document.getElementById('navControls'),
+    fileInput: document.getElementById('fileInput'),
+    fileLabel: document.querySelector('.file-label'),
+    fileNameBar: document.getElementById('fileNameBar'),
   };
 
   // UI Management
@@ -382,6 +183,147 @@ function initializeApp() {
       });
     }
   };
+
+  // Add minimalistic arrows
+  const leftArrow = document.createElement('button');
+  leftArrow.id = 'edgeLeftArrow';
+  leftArrow.innerHTML = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="14" fill="rgba(0,0,0,0.18)"/><path d="M17.5 7L11 14L17.5 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  leftArrow.title = 'Previous Page';
+  leftArrow.style.position = 'fixed';
+  leftArrow.style.left = '10px';
+  leftArrow.style.top = '50%';
+  leftArrow.style.transform = 'translateY(-50%)';
+  leftArrow.style.zIndex = '1001';
+  leftArrow.style.background = 'none';
+  leftArrow.style.border = 'none';
+  leftArrow.style.padding = '0';
+  leftArrow.style.cursor = 'pointer';
+  leftArrow.style.opacity = '0.8';
+  leftArrow.style.display = 'none';
+  leftArrow.style.width = '64px';
+  leftArrow.style.height = '64px';
+
+  const rightArrow = document.createElement('button');
+  rightArrow.id = 'edgeRightArrow';
+  rightArrow.innerHTML = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="14" fill="rgba(0,0,0,0.18)"/><path d="M10.5 7L17 14L10.5 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  rightArrow.title = 'Next Page';
+  rightArrow.style.position = 'fixed';
+  rightArrow.style.right = '10px';
+  rightArrow.style.top = '50%';
+  rightArrow.style.transform = 'translateY(-50%)';
+  rightArrow.style.zIndex = '1001';
+  rightArrow.style.background = 'none';
+  rightArrow.style.border = 'none';
+  rightArrow.style.padding = '0';
+  rightArrow.style.cursor = 'pointer';
+  rightArrow.style.opacity = '0.8';
+  rightArrow.style.display = 'none';
+  rightArrow.style.width = '64px';
+  rightArrow.style.height = '64px';
+
+  document.body.appendChild(leftArrow);
+  document.body.appendChild(rightArrow);
+
+  // 1. Increase the size of the edge navigation arrows
+  leftArrow.querySelector('svg').setAttribute('width', '48');
+  leftArrow.querySelector('svg').setAttribute('height', '48');
+  rightArrow.querySelector('svg').setAttribute('width', '48');
+  rightArrow.querySelector('svg').setAttribute('height', '48');
+
+  // Navigation logic for arrows
+  leftArrow.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (window._comicReader() && window._comicReader().prevPage) window._comicReader().prevPage();
+  });
+  rightArrow.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (window._comicReader() && window._comicReader().nextPage) window._comicReader().nextPage();
+  });
+
+  // Show/hide arrows when reader is visible
+  const showArrows = () => {
+    leftArrow.style.display = 'block';
+    rightArrow.style.display = 'block';
+  };
+  const hideArrows = () => {
+    leftArrow.style.display = 'none';
+    rightArrow.style.display = 'none';
+  };
+
+  // 3. Tap-to-hide/show UI elements
+  let uiHidden = false;
+  function setUIHidden(hidden) {
+    uiHidden = hidden;
+    // Hide/show nav controls
+    if (document.getElementById('navControls')) {
+      document.getElementById('navControls').style.display = hidden ? 'none' : '';
+    }
+    // Hide/show site header
+    if (document.getElementById('siteHeader')) {
+      document.getElementById('siteHeader').style.display = hidden ? 'none' : '';
+    }
+    // Hide/show arrows
+    if (hidden) {
+      hideArrows();
+    } else {
+      showArrows();
+    }
+    // Hide/show fileNameBar
+    if (document.getElementById('fileNameBar')) {
+      document.getElementById('fileNameBar').style.display = hidden ? 'none' : 'block';
+    }
+  }
+
+  // Tap/click anywhere on the reader container toggles UI
+  if (document.getElementById('readerContainer')) {
+    document.getElementById('readerContainer').addEventListener('click', function(e) {
+      // Only toggle if not clicking on nav controls or arrows
+      if (e.target.closest('#navControls') || e.target.closest('#edgeLeftArrow') || e.target.closest('#edgeRightArrow')) return;
+      setUIHidden(!uiHidden);
+    });
+  }
+
+  // Show arrows when reader is shown, hide otherwise
+  const origShowReader = ui.showReader.bind(ui);
+  ui.showReader = function() {
+    origShowReader();
+    const fileNameBar = document.getElementById('fileNameBar');
+    if (fileNameBar) {
+      fileNameBar.textContent = window.currentFileName || '';
+      fileNameBar.style.display = uiHidden ? 'none' : 'block';
+    }
+    showArrows();
+    setUIHidden(false);
+  };
+  const origResetUI = ui.resetUI.bind(ui);
+  ui.resetUI = function() {
+    origResetUI();
+    hideArrows();
+    setUIHidden(false);
+  };
+
+  // 3. Add file name display at the top, which hides with UI
+  if (!document.getElementById('fileNameBar')) {
+    const fileNameBar = document.createElement('div');
+    fileNameBar.id = 'fileNameBar';
+    fileNameBar.style.position = 'fixed';
+    fileNameBar.style.top = '0';
+    fileNameBar.style.left = '0';
+    fileNameBar.style.right = '0';
+    fileNameBar.style.zIndex = '1002';
+    fileNameBar.style.background = 'rgba(0,0,0,0.7)';
+    fileNameBar.style.color = '#fff';
+    fileNameBar.style.fontSize = '1.3em';
+    fileNameBar.style.fontWeight = '600';
+    fileNameBar.style.textAlign = 'center';
+    fileNameBar.style.padding = '12px 0 8px 0';
+    fileNameBar.style.display = 'none';
+    document.body.appendChild(fileNameBar);
+  }
+
+  // Remove previous fileHandler.processFile override for fileNameBar
+  // Instead, set the file name globally and update in ui.showReader
+  window.currentFileName = '';
 
   // Navigation functionality
   const navigation = {
@@ -707,8 +649,8 @@ function initializeApp() {
     });
   }
   function loadUnrar() {
-    if (window.UNRAR) return Promise.resolve();
-    return loadScript('ComicDrop/lib/unrar.min.js');
+    // Unarchiver is already loaded via CDN in index.html
+    return Promise.resolve();
   }
   function loadJS7z() {
     if (window.JS7z) return Promise.resolve();
