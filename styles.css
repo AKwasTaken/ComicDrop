@@ -141,7 +141,8 @@ main {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.reader-container:hover .nav-controls {
+.reader-container:hover .nav-controls,
+.nav-controls.editing {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }

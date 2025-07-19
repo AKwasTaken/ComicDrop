@@ -20,6 +20,7 @@ function initializeApp() {
   let comicReader = null;
   let zoomLevel = 1;
   let fitMode = 'fit'; // 'fit', 'width', 'height', 'custom'
+  let isEditingPage = false; // Track if we're editing page number
 
   function showError(message) {
     console.error('Error:', message);
@@ -233,6 +234,14 @@ function initializeApp() {
     const currentPage = comicReader.currentPage + 1;
     const totalPages = comicReader.images.length;
     
+    // Set editing flag to prevent UI hiding
+    isEditingPage = true;
+    
+    // Add editing class to keep nav controls visible
+    if (navControls) {
+      navControls.classList.add('editing');
+    }
+    
     // Create input element
     const input = document.createElement('input');
     input.type = 'number';
@@ -271,11 +280,19 @@ function initializeApp() {
         updateNavButtons();
         resetZoom();
       }
-      // Restore pageCounter
+      // Restore pageCounter and clear editing flag
+      isEditingPage = false;
+      if (navControls) {
+        navControls.classList.remove('editing');
+      }
       updateNavButtons();
     }
     
     function handleInputCancel() {
+      isEditingPage = false;
+      if (navControls) {
+        navControls.classList.remove('editing');
+      }
       updateNavButtons();
     }
     
@@ -309,7 +326,7 @@ function initializeApp() {
     const currentPage = comicReader.currentPage;
     const totalPages = comicReader.images.length;
     
-    console.log('Updating nav buttons:', { currentPage, totalPages });
+    console.log('Updating nav buttons:', { currentPage, totalPages, isEditingPage });
     
     // Update button states
     const prevDisabled = currentPage === 0;
@@ -341,10 +358,18 @@ function initializeApp() {
       last: lastDisabled ? 'disabled' : 'enabled'
     });
     
-    // Only update pageCounter if it doesn't contain an input
-    if (!pageCounter.querySelector('input')) {
+    // Always update pageCounter when not editing
+    if (!isEditingPage) {
+      // Remove any existing input if we're not editing
+      const existingInput = pageCounter.querySelector('input');
+      if (existingInput) {
+        existingInput.remove();
+      }
+      
       pageCounter.textContent = `${currentPage + 1} / ${totalPages}`;
       console.log('Updated page counter to:', pageCounter.textContent);
+    } else {
+      console.log('Skipping page counter update - currently editing');
     }
   }
 
@@ -375,6 +400,12 @@ function initializeApp() {
   function goToFirstPage() {
     console.log('goToFirstPage called');
     if (comicReader && comicReader.currentPage !== 0) {
+      // Reset editing state
+      isEditingPage = false;
+      if (navControls) {
+        navControls.classList.remove('editing');
+      }
+      
       comicReader.displayPage(0);
       updateNavButtons();
       resetZoom();
@@ -384,6 +415,12 @@ function initializeApp() {
   function goToLastPage() {
     console.log('goToLastPage called');
     if (comicReader && comicReader.currentPage !== comicReader.images.length - 1) {
+      // Reset editing state
+      isEditingPage = false;
+      if (navControls) {
+        navControls.classList.remove('editing');
+      }
+      
       comicReader.displayPage(comicReader.images.length - 1);
       updateNavButtons();
       resetZoom();
@@ -393,6 +430,12 @@ function initializeApp() {
   function goToPrevPage() {
     console.log('goToPrevPage called');
     if (comicReader && comicReader.currentPage > 0) {
+      // Reset editing state
+      isEditingPage = false;
+      if (navControls) {
+        navControls.classList.remove('editing');
+      }
+      
       comicReader.displayPage(comicReader.currentPage - 1);
       updateNavButtons();
       resetZoom();
@@ -402,6 +445,12 @@ function initializeApp() {
   function goToNextPage() {
     console.log('goToNextPage called');
     if (comicReader && comicReader.currentPage < comicReader.images.length - 1) {
+      // Reset editing state
+      isEditingPage = false;
+      if (navControls) {
+        navControls.classList.remove('editing');
+      }
+      
       comicReader.displayPage(comicReader.currentPage + 1);
       updateNavButtons();
       resetZoom();
@@ -539,13 +588,31 @@ function initializeApp() {
   // When a new page is displayed, re-apply zoom
   const origDisplayPage = window.ComicReader.prototype.displayPage;
   window.ComicReader.prototype.displayPage = function(index) {
+    console.log('displayPage called with index:', index);
     origDisplayPage.call(this, index);
     setTimeout(() => {
       applyZoom();
+      // Force update nav buttons after page change
       updateNavButtons();
     }, 10);
   };
 
+  // Force update function for debugging
+  function forceUpdatePageCounter() {
+    if (!comicReader) {
+      console.log('No comic reader to update');
+      return;
+    }
+    
+    console.log('Force updating page counter...');
+    isEditingPage = false;
+    if (navControls) {
+      navControls.classList.remove('editing');
+    }
+    updateNavButtons();
+  }
+
   // Expose for debugging
   window._comicReader = () => comicReader;
+  window.forceUpdatePageCounter = forceUpdatePageCounter;
 } 
