@@ -8,13 +8,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <header id="siteHeader">
-    <h1>ComicDrop</h1>
-  </header>
   <main>
-    <div id="dropZone" class="drop-zone">
-      <p>Drag & drop your CBR/CBZ/CB7 file here<br>or <label for="fileInput" class="file-label">choose a file</label>.</p>
-      <input type="file" id="fileInput" accept=".cbz,.cbr,.cb7,.zip,.rar,.7z" style="display:none">
+    <div class="drop-zone-outer">
+      <div id="dropZone" class="drop-zone">
+        <span class="drop-icon">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="14" width="16" height="28" rx="4" fill="#00b894" fill-opacity="0.18"/>
+            <rect x="32" y="14" width="16" height="28" rx="4" fill="#00b894" fill-opacity="0.12"/>
+            <rect x="27" y="14" width="2" height="28" fill="#00b894" fill-opacity="0.28"/>
+            <rect x="14" y="22" width="28" height="12" rx="2" fill="#00b894" fill-opacity="0.22"/>
+          </svg>
+        </span>
+        <h1>ComicDrop<br></h1>
+        <p>Drag & drop your CBR/CBZ file here to read it<br>or</p>
+        <label for="fileInput" class="file-label">Choose a file</label>
+        <input type="file" id="fileInput" accept=".cbz,.cbr,.cb7,.zip,.rar,.7z" style="display:none">
+      </div>
     </div>
     <div id="progressContainer" class="progress-container" style="display:none;">
       <div id="progressBar" class="progress-bar"></div>

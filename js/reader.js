@@ -6,7 +6,6 @@ class ComicReader {
    * @param {string[]} images - Array of image blob URLs
    * @param {Object} [options] - Optional settings
    * @param {boolean} [options.spreadMode] - If true, show two pages at a time (except first page)
-   * @param {boolean} [options.continuousScrollMode] - If true, enable continuous scroll mode
    */
   constructor(images, options = {}) {
     if (!Array.isArray(images) || images.length === 0) {
@@ -19,8 +18,6 @@ class ComicReader {
       throw new Error('Comic page container not found');
     }
     this.spreadMode = !!options.spreadMode;
-    this.continuousScrollMode = !!options.continuousScrollMode;
-    this.zoom = 1.0;
     // Preload next image for better performance
     this.preloadQueue = new Set();
     this.preloadNextImage();
@@ -36,33 +33,10 @@ class ComicReader {
     return !!this.spreadMode;
   }
 
-  setContinuousScrollMode(enabled) {
-    this.continuousScrollMode = !!enabled;
-    this.displayPage(0);
-  }
-
-  isContinuousScrollMode() {
-    return !!this.continuousScrollMode;
-  }
-
-  setZoom(zoom) {
-    this.zoom = zoom;
-    if (this.continuousScrollMode) {
-      // Apply zoom to all images
-      const imgs = this.pageContainer.querySelectorAll('img');
-      imgs.forEach(img => {
-        img.style.transform = `scale(${this.zoom})`;
-      });
-    } else {
-      // Single/spread mode: handled by zoom logic elsewhere
-    }
-  }
-
   /**
    * Preload the next image for smoother navigation
    */
   preloadNextImage() {
-    if (this.continuousScrollMode) return; // No need in scroll mode
     let nextIndex = this.currentPage + 1;
     if (this.spreadMode && this.currentPage === 0) {
       nextIndex = 1;
@@ -90,59 +64,17 @@ class ComicReader {
   }
 
   /**
-   * Display the page at the given index (handles all modes)
+   * Display the page at the given index (handles spread mode)
    * @param {number} index
    */
   displayPage(index) {
-    if (this.continuousScrollMode) {
-      this.currentPage = 0;
-      if (this.pageContainer) {
-        this.pageContainer.innerHTML = '';
-        this.pageContainer.classList.add('continuous-scroll');
-        this.pageContainer.style.overflowY = 'auto';
-        this.pageContainer.style.display = 'block';
-        this.pageContainer.style.height = '100vh';
-        this.pageContainer.style.width = '100vw';
-        this.pageContainer.style.padding = '0';
-        this.pageContainer.style.margin = '0';
-        this.pageContainer.style.background = 'none';
-        this.pageContainer.style.position = 'relative';
-        this.pageContainer.style.scrollBehavior = 'smooth';
-        this.images.forEach((src, i) => {
-          const img = document.createElement('img');
-          img.src = src;
-          img.alt = `Page ${i + 1}`;
-          img.loading = 'eager';
-          img.style.display = 'block';
-          img.style.width = 'auto';
-          img.style.maxWidth = '100%';
-          img.style.margin = '0 auto 24px auto';
-          img.style.transform = `scale(${this.zoom})`;
-          img.onerror = () => {
-            img.alt = `Failed to load page ${i + 1}`;
-          };
-          this.pageContainer.appendChild(img);
-        });
-      }
-      return;
-    }
     if (index < 0 || index >= this.images.length) {
       console.warn(`Invalid page index: ${index}. Valid range: 0-${this.images.length - 1}`);
       return;
     }
     this.currentPage = index;
     if (this.pageContainer) {
-      this.pageContainer.classList.remove('continuous-scroll');
       this.pageContainer.innerHTML = '';
-      this.pageContainer.style.overflowY = '';
-      this.pageContainer.style.display = '';
-      this.pageContainer.style.height = '';
-      this.pageContainer.style.width = '';
-      this.pageContainer.style.padding = '';
-      this.pageContainer.style.margin = '';
-      this.pageContainer.style.background = '';
-      this.pageContainer.style.position = '';
-      this.pageContainer.style.scrollBehavior = '';
       if (!this.spreadMode || index === 0) {
         // Single page (first page or single mode)
         const img = document.createElement('img');
@@ -150,6 +82,7 @@ class ComicReader {
         img.alt = `Page ${index + 1}`;
         img.loading = 'eager';
         img.onerror = () => {
+          console.error(`Failed to load image at index ${index}`);
           img.alt = `Failed to load page ${index + 1}`;
         };
         img.onload = () => {
@@ -163,6 +96,7 @@ class ComicReader {
         img1.alt = `Page ${index + 1}`;
         img1.loading = 'eager';
         img1.onerror = () => {
+          console.error(`Failed to load image at index ${index}`);
           img1.alt = `Failed to load page ${index + 1}`;
         };
         this.pageContainer.appendChild(img1);
@@ -172,10 +106,12 @@ class ComicReader {
           img2.alt = `Page ${index + 2}`;
           img2.loading = 'eager';
           img2.onerror = () => {
+            console.error(`Failed to load image at index ${index + 1}`);
             img2.alt = `Failed to load page ${index + 2}`;
           };
           this.pageContainer.appendChild(img2);
         }
+        // Preload next spread
         this.preloadNextImage();
       }
     }
