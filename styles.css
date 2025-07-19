@@ -382,6 +382,25 @@ main {
   backdrop-filter: var(--backdrop-blur);
 }
 
+/* File name bar styles */
+#fileNameBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1002;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: 600;
+  text-align: center;
+  padding: 14px 0 10px 0;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  user-select: none;
+  pointer-events: none;
+}
+
 /* Responsive design */
 @media (max-width: 700px) {
   .drop-zone, .progress-container {

@@ -106,8 +106,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const origShowReader = ui.showReader.bind(ui);
   ui.showReader = function() {
     origShowReader();
-    fileNameBar.textContent = window.currentFileName || '';
-    fileNameBar.style.display = uiHidden ? 'none' : 'block';
+    const fileNameBar = document.getElementById('fileNameBar');
+    if (fileNameBar) {
+      fileNameBar.textContent = window.currentFileName || '';
+      fileNameBar.style.display = uiHidden ? 'none' : 'block';
+    }
     showArrows();
     setUIHidden(false);
   };
@@ -119,30 +122,27 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // 3. Add file name display at the top, which hides with UI
-  const fileNameBar = document.createElement('div');
-  fileNameBar.id = 'fileNameBar';
-  fileNameBar.style.position = 'fixed';
-  fileNameBar.style.top = '0';
-  fileNameBar.style.left = '0';
-  fileNameBar.style.right = '0';
-  fileNameBar.style.zIndex = '1002';
-  fileNameBar.style.background = 'rgba(0,0,0,0.7)';
-  fileNameBar.style.color = '#fff';
-  fileNameBar.style.fontSize = '1.3em';
-  fileNameBar.style.fontWeight = '600';
-  fileNameBar.style.textAlign = 'center';
-  fileNameBar.style.padding = '12px 0 8px 0';
-  fileNameBar.style.display = 'none';
-  document.body.appendChild(fileNameBar);
+  if (!document.getElementById('fileNameBar')) {
+    const fileNameBar = document.createElement('div');
+    fileNameBar.id = 'fileNameBar';
+    fileNameBar.style.position = 'fixed';
+    fileNameBar.style.top = '0';
+    fileNameBar.style.left = '0';
+    fileNameBar.style.right = '0';
+    fileNameBar.style.zIndex = '1002';
+    fileNameBar.style.background = 'rgba(0,0,0,0.7)';
+    fileNameBar.style.color = '#fff';
+    fileNameBar.style.fontSize = '1.3em';
+    fileNameBar.style.fontWeight = '600';
+    fileNameBar.style.textAlign = 'center';
+    fileNameBar.style.padding = '12px 0 8px 0';
+    fileNameBar.style.display = 'none';
+    document.body.appendChild(fileNameBar);
+  }
 
   // Remove previous fileHandler.processFile override for fileNameBar
   // Instead, set the file name globally and update in ui.showReader
   window.currentFileName = '';
-  const origProcessFile = fileHandler.processFile;
-  fileHandler.processFile = async function(file) {
-    window.currentFileName = file.name || '';
-    return await origProcessFile.apply(this, arguments);
-  };
 });
 
 function initializeApp() {
@@ -251,39 +251,28 @@ function initializeApp() {
         console.error('navControls element not found');
         return;
       }
-      
-      // 2. Remove next/prev page arrows from the middle nav bar
+      // Only first/last and page counter in the nav bar
       elements.navControls.innerHTML = `
         <button id="firstPageBtn" title="First Page">⏮</button>
         <span id="pageCounter" title="Click to edit page number">1 / 1</span>
         <button id="lastPageBtn" title="Last Page">⏭</button>
       `;
-      
       this.attachNavListeners();
     },
 
     attachNavListeners() {
       console.log('Attaching nav listeners...');
-      
       const buttons = {
         firstPageBtn: document.getElementById('firstPageBtn'),
-        prevPageBtn: document.getElementById('prevPageBtn'),
-        nextPageBtn: document.getElementById('nextPageBtn'),
         lastPageBtn: document.getElementById('lastPageBtn'),
         pageCounter: document.getElementById('pageCounter')
       };
-      
       console.log('Found buttons:', buttons);
-      
-      // Attach listeners with consistent pattern
       const buttonHandlers = {
         firstPageBtn: () => navigation.goToFirstPage(),
-        prevPageBtn: () => navigation.goToPrevPage(),
-        nextPageBtn: () => navigation.goToNextPage(),
         lastPageBtn: () => navigation.goToLastPage(),
         pageCounter: () => this.startPageEdit()
       };
-
       Object.entries(buttons).forEach(([key, button]) => {
         if (button) {
           button.addEventListener('click', (e) => {
@@ -298,7 +287,6 @@ function initializeApp() {
           console.error(`${key} not found`);
         }
       });
-      
       this.updateNavButtons();
     },
 
@@ -307,48 +295,27 @@ function initializeApp() {
         console.log('updateNavButtons: comicReader is null');
         return;
       }
-      
       const buttons = {
-        prevPageBtn: document.getElementById('prevPageBtn'),
-        nextPageBtn: document.getElementById('nextPageBtn'),
         firstPageBtn: document.getElementById('firstPageBtn'),
         lastPageBtn: document.getElementById('lastPageBtn'),
         pageCounter: document.getElementById('pageCounter')
       };
-      
       if (!Object.values(buttons).every(btn => btn)) {
         console.error('Navigation buttons not found in updateNavButtons');
         return;
       }
-      
       const currentPage = state.comicReader.currentPage;
       const totalPages = state.comicReader.images.length;
-      
       console.log('Updating nav buttons:', { currentPage, totalPages, isEditingPage: state.isEditingPage });
-      
       // Update button states
-      const buttonStates = {
-        prevPageBtn: currentPage === 0,
-        firstPageBtn: currentPage === 0,
-        nextPageBtn: currentPage === totalPages - 1,
-        lastPageBtn: currentPage === totalPages - 1
-      };
-      
-      Object.entries(buttonStates).forEach(([key, disabled]) => {
-        buttons[key].disabled = disabled;
-      });
-      
-      console.log('Button states:', Object.fromEntries(
-        Object.entries(buttonStates).map(([key, disabled]) => [key, disabled ? 'disabled' : 'enabled'])
-      ));
-      
+      buttons.firstPageBtn.disabled = currentPage === 0;
+      buttons.lastPageBtn.disabled = currentPage === totalPages - 1;
       // Update page counter when not editing
       if (!state.isEditingPage) {
         const existingInput = buttons.pageCounter.querySelector('input');
         if (existingInput) {
           existingInput.remove();
         }
-        
         buttons.pageCounter.textContent = `${currentPage + 1} / ${totalPages}`;
         console.log('Updated page counter to:', buttons.pageCounter.textContent);
       } else {
@@ -456,11 +423,17 @@ function initializeApp() {
         utils.showProgress(5, 'Validating file...');
         const result = await window.handleFileInput(file, utils.showProgress);
         if (result && result.images && result.images.length) {
+          // Set and show the file name bar before showing the reader
+          window.currentFileName = file.name || '';
+          const fileNameBar = document.getElementById('fileNameBar');
+          if (fileNameBar) {
+            fileNameBar.textContent = window.currentFileName;
+            fileNameBar.style.display = '';
+          }
           state.comicReader = new window.ComicReader(result.images);
           ui.showReader();
           state.comicReader.displayPage(0);
           ui.updateNavButtons();
-          // Removed: zoom.initializeZoom();
         } else {
           utils.showError('No images found in archive.');
         }
@@ -746,6 +719,7 @@ function initializeApp() {
     };
     return loadScript('ComicDrop/lib/7zz.umd.js');
   }
+
   // Patch fileHandler.processFile to load libraries as needed
   const origProcessFile = fileHandler.processFile;
   fileHandler.processFile = async function(file) {
@@ -784,4 +758,4 @@ function initializeApp() {
   //   }
   //   zoom.calculateFitLevels();
   // };
-} 
+}
