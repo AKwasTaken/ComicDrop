@@ -760,60 +760,178 @@ function initializeApp() {
     }
   };
 
-  // Remove all custom zoom/pan logic and state
-  // Add Panzoom integration
+  // --- Clean, robust zoom and navigation code ---
 
-  let panzoomInstance = null;
+  let currentScale = 1.0;
+  const MIN_SCALE = 0.1;
+  const MAX_SCALE = 8.0;
+  let panX = 0;
+  let panY = 0;
 
-  function setupPanzoom(img) {
-    if (panzoomInstance) {
-      panzoomInstance.destroy();
-      panzoomInstance = null;
-    }
-    panzoomInstance = Panzoom(img, {
-      maxScale: 8,
-      minScale: 0.1,
-      contain: 'outside',
-      animate: true,
-      duration: 150,
-      step: 0.1,
-      cursor: 'grab',
-      startScale: 1,
-      setTransform: (el, { scale, x, y }) => {
-        el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+  function setImageTransform(img) {
+    img.style.transition = 'none';
+    img.style.transform = `translate(${panX}px, ${panY}px) scale(${currentScale})`;
+  }
+
+  function resetTransform(img) {
+    currentScale = 1.0;
+    panX = 0;
+    panY = 0;
+    setImageTransform(img);
+  }
+
+  function setupZoomAndPan(img) {
+    resetTransform(img);
+
+    // Remove all previous listeners
+    img.onwheel = null;
+    img.ontouchstart = null;
+    img.ontouchmove = null;
+    img.ontouchend = null;
+    img.ondblclick = null;
+    img.onmousedown = null;
+    img.onmousemove = null;
+    img.onmouseup = null;
+    img.onmouseleave = null;
+
+    // --- Wheel/trackpad zoom ---
+    img.addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 0) {
+        e.preventDefault();
+        let delta = e.deltaY;
+        if (Math.abs(delta) < 10) {
+          // Trackpad: linear scaling
+          currentScale += delta * -0.01;
+        } else {
+          // Mouse wheel: multiplicative
+          let zoomFactor = delta > 0 ? 0.95 : 1.05;
+          currentScale = currentScale * zoomFactor;
+        }
+        currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, currentScale));
+        setImageTransform(img);
+      }
+    }, { passive: false });
+
+    // --- Double-click/double-tap to reset zoom ---
+    img.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      resetTransform(img);
+    });
+
+    // --- Pinch zoom and swipe for mobile ---
+    let lastDist = null;
+    let lastTouchMid = null;
+    let lastPan = null;
+    let swipeStartX = null;
+    let swipeStartY = null;
+    let isPinching = false;
+    let isPanning = false;
+
+    img.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        isPinching = true;
+        lastDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        lastTouchMid = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+        };
+        lastPan = { x: panX, y: panY };
+      } else if (e.touches.length === 1) {
+        isPinching = false;
+        isPanning = false;
+        swipeStartX = e.touches[0].clientX;
+        swipeStartY = e.touches[0].clientY;
       }
     });
 
-    // Mouse wheel zoom
-    img.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel, { passive: false });
+    img.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && lastDist !== null) {
+        e.preventDefault();
+        // Pinch zoom
+        const newDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        let zoomFactor = newDist / lastDist;
+        currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, currentScale * zoomFactor));
+        // Pan with pinch
+        const newMid = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+        };
+        panX = lastPan.x + (newMid.x - lastTouchMid.x);
+        panY = lastPan.y + (newMid.y - lastTouchMid.y);
+        setImageTransform(img);
+        lastDist = newDist;
+      }
+    }, { passive: false });
 
-    // Double-click toggle: 100% <-> fit-to-width
-    img.addEventListener('dblclick', (e) => {
-      e.preventDefault();
-      const container = img.parentElement;
-      const containerRect = container.getBoundingClientRect();
-      const widthFit = containerRect.width / img.naturalWidth;
-      const currentScale = panzoomInstance.getScale();
-      const EPSILON = 0.01;
-      if (Math.abs(currentScale - 1.0) > EPSILON && Math.abs(currentScale - widthFit) > EPSILON) {
-        panzoomInstance.zoomTo(0, 0, 1.0, { animate: true });
-      } else if (Math.abs(currentScale - 1.0) < EPSILON) {
-        panzoomInstance.zoomTo(0, 0, widthFit, { animate: true });
-      } else if (Math.abs(currentScale - widthFit) < EPSILON) {
-        panzoomInstance.zoomTo(0, 0, 1.0, { animate: true });
-      } else {
-        panzoomInstance.zoomTo(0, 0, 1.0, { animate: true });
+    img.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) {
+        lastDist = null;
+        lastTouchMid = null;
+        lastPan = null;
+      }
+      // Swipe navigation
+      if (swipeStartX !== null && e.changedTouches.length === 1) {
+        const endX = e.changedTouches[0].clientX;
+        const dx = endX - swipeStartX;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.changedTouches[0].clientY - swipeStartY)) {
+          if (dx < 0) {
+            if (window._comicReader() && window._comicReader().nextPage) window._comicReader().nextPage();
+          } else {
+            if (window._comicReader() && window._comicReader().prevPage) window._comicReader().prevPage();
+          }
+        }
+        swipeStartX = null;
+        swipeStartY = null;
+      }
+    });
+
+    // --- Mouse drag panning when zoomed in ---
+    let mouseDown = false;
+    let mouseStart = { x: 0, y: 0 };
+    let panStart = { x: 0, y: 0 };
+    img.addEventListener('mousedown', (e) => {
+      if (currentScale > 1.01) {
+        mouseDown = true;
+        mouseStart = { x: e.clientX, y: e.clientY };
+        panStart = { x: panX, y: panY };
+        img.style.cursor = 'grabbing';
+        e.preventDefault();
+      }
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (mouseDown) {
+        panX = panStart.x + (e.clientX - mouseStart.x);
+        panY = panStart.y + (e.clientY - mouseStart.y);
+        setImageTransform(img);
+      }
+    });
+    window.addEventListener('mouseup', (e) => {
+      if (mouseDown) {
+        mouseDown = false;
+        img.style.cursor = '';
+      }
+    });
+    img.addEventListener('mouseleave', (e) => {
+      if (mouseDown) {
+        mouseDown = false;
+        img.style.cursor = '';
       }
     });
   }
 
-  // Patch ComicReader to setup Panzoom on every page
+  // Patch ComicReader to setup zoom/pan/swipe on every page
   const origDisplayPage = window.ComicReader.prototype.displayPage;
   window.ComicReader.prototype.displayPage = function(index) {
     origDisplayPage.call(this, index);
     setTimeout(() => {
       const img = this.pageContainer.querySelector('img');
-      if (img) setupPanzoom(img);
+      if (img) setupZoomAndPan(img);
       ui.updateNavButtons();
     }, 10);
   };
