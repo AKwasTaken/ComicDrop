@@ -515,15 +515,28 @@ function initializeApp() {
     let pinchLastDist = null;
     let swipeStartX = null;
     let swipeStartY = null;
+    // Touch panning state
+    let touchPanning = false;
+    let touchPanStart = { x: 0, y: 0 };
+    let touchPanOffset = { x: 0, y: 0 };
     img.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
         pinchLastDist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
+        touchPanning = false;
       } else if (e.touches.length === 1) {
         swipeStartX = e.touches[0].clientX;
         swipeStartY = e.touches[0].clientY;
+        // Enable panning if zoomed in
+        if (img._zoomScale > 1.01) {
+          touchPanning = true;
+          touchPanStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          touchPanOffset = { ...img._panOffset };
+        } else {
+          touchPanning = false;
+        }
       }
     });
     img.addEventListener('touchmove', (e) => {
@@ -537,14 +550,26 @@ function initializeApp() {
         img._zoomScale = Math.max(0.1, Math.min(8.0, img._zoomScale * zoomFactor));
         applyTransform(img);
         pinchLastDist = newDist;
+      } else if (e.touches.length === 1 && touchPanning) {
+        e.preventDefault();
+        // Pan the image
+        const dx = e.touches[0].clientX - touchPanStart.x;
+        const dy = e.touches[0].clientY - touchPanStart.y;
+        img._panOffset.x = touchPanOffset.x + dx;
+        img._panOffset.y = touchPanOffset.y + dy;
+        applyTransform(img);
       }
     }, { passive: false });
     img.addEventListener('touchend', (e) => {
       if (e.touches.length < 2) {
         pinchLastDist = null;
       }
+      // End panning
+      if (e.touches.length === 0) {
+        touchPanning = false;
+      }
       // Swipe navigation
-      if (swipeStartX !== null && e.changedTouches.length === 1) {
+      if (!touchPanning && swipeStartX !== null && e.changedTouches.length === 1) {
         const endX = e.changedTouches[0].clientX;
         const dx = endX - swipeStartX;
         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.changedTouches[0].clientY - swipeStartY)) {
