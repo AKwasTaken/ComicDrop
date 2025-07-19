@@ -313,11 +313,15 @@ main {
 
 /* Comic page */
 .comic-page {
-  flex: 1 1 0;
-  min-height: 0;
-  min-width: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
+  z-index: 1;
+  flex: none;
+  min-height: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -325,8 +329,8 @@ main {
   border-radius: 0;
   box-shadow: none;
   overflow: auto;
-  margin: 0;
-  position: relative;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .comic-page img {
@@ -405,7 +409,7 @@ main {
 
 /* File name bar styles */
 #fileNameBar {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -417,7 +421,7 @@ main {
   text-align: center;
   padding: 12px 0 8px 0;
   display: none;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(5px);
   pointer-events: none;
 }
 
@@ -477,4 +481,14 @@ main {
     width: 100%;
     height: auto;
   }
+} 
+
+.comic-page, .reader-container {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+.comic-page img {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  display: block;
 } 

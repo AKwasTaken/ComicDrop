@@ -326,10 +326,7 @@ function initializeApp() {
     if (document.getElementById('navControls')) {
       document.getElementById('navControls').style.display = hidden ? 'none' : '';
     }
-    // Hide/show site header
-    if (document.getElementById('siteHeader')) {
-      document.getElementById('siteHeader').style.display = hidden ? 'none' : '';
-    }
+    // Do NOT hide/show site header here
     // Hide/show arrows
     if (hidden) {
       hideArrows();
