@@ -36,14 +36,82 @@ function initializeApp() {
     showReader() {
       if (elements.dropZone) elements.dropZone.style.display = 'none';
       if (elements.readerContainer) elements.readerContainer.style.display = 'flex';
-      if (elements.siteHeader) elements.siteHeader.hidden = true;
+      // Hide all header children except fullscreenBtn (now handled outside header)
+      const siteHeader = document.getElementById('siteHeader');
+      if (siteHeader) {
+        Array.from(siteHeader.children).forEach(child => {
+          child.style.display = 'none';
+        });
+      }
+      // Add fullscreen button absolutely at top-right above fileNameBar
+      let fullscreenBtn = document.getElementById('fullscreenBtn');
+      if (!fullscreenBtn) {
+        fullscreenBtn = document.createElement('button');
+        fullscreenBtn.id = 'fullscreenBtn';
+        fullscreenBtn.title = 'Toggle Fullscreen';
+        fullscreenBtn.setAttribute('aria-label', 'Toggle Fullscreen');
+        fullscreenBtn.innerHTML = `
+          <svg id="fullscreenIcon" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+            <rect x="3" y="3" width="5" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="3" y="3" width="1.5" height="5" rx="0.75" fill="currentColor"/>
+            <rect x="14" y="3" width="5" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="17.5" y="3" width="1.5" height="5" rx="0.75" fill="currentColor"/>
+            <rect x="3" y="17.5" width="5" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="3" y="14" width="1.5" height="5" rx="0.75" fill="currentColor"/>
+            <rect x="14" y="17.5" width="5" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="17.5" y="14" width="1.5" height="5" rx="0.75" fill="currentColor"/>
+          </svg>`;
+        fullscreenBtn.style.position = 'absolute';
+        fullscreenBtn.style.top = '10px';
+        fullscreenBtn.style.right = '18px';
+        fullscreenBtn.style.zIndex = '1100';
+        fullscreenBtn.style.background = 'none';
+        fullscreenBtn.style.border = 'none';
+        fullscreenBtn.style.color = 'var(--text-primary)';
+        fullscreenBtn.style.fontSize = '1.4rem';
+        fullscreenBtn.style.cursor = 'pointer';
+        fullscreenBtn.style.borderRadius = '50%';
+        fullscreenBtn.style.width = '2.4rem';
+        fullscreenBtn.style.height = '2.4rem';
+        fullscreenBtn.style.display = 'flex';
+        fullscreenBtn.style.alignItems = 'center';
+        fullscreenBtn.style.justifyContent = 'center';
+        fullscreenBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+        fullscreenBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          eventHandlers.toggleFullscreen();
+        });
+        document.body.appendChild(fullscreenBtn);
+      } else {
+        fullscreenBtn.style.display = 'flex';
+      }
+      // Ensure fileNameBar is present and below the button
+      let fileNameBar = document.getElementById('fileNameBar');
+      if (fileNameBar && fullscreenBtn) {
+        fileNameBar.style.position = 'fixed';
+        fileNameBar.style.top = '0';
+        fileNameBar.style.left = '0';
+        fileNameBar.style.right = '0';
+        fileNameBar.style.zIndex = '1002';
+      }
       this.renderNavControls();
     },
 
     resetUI() {
       if (elements.dropZone) elements.dropZone.style.display = '';
       if (elements.readerContainer) elements.readerContainer.style.display = 'none';
-      if (elements.siteHeader) elements.siteHeader.hidden = false;
+      // Show all header children except fullscreenBtn (now handled outside header)
+      const siteHeader = document.getElementById('siteHeader');
+      if (siteHeader) {
+        Array.from(siteHeader.children).forEach(child => {
+          child.style.display = '';
+        });
+      }
+      // Hide fullscreen button if present
+      let fullscreenBtn = document.getElementById('fullscreenBtn');
+      if (fullscreenBtn) {
+        fullscreenBtn.style.display = 'none';
+      }
       utils.hideProgress();
     },
 
@@ -642,7 +710,7 @@ function initializeApp() {
     }
   };
 
-  // Add fullscreen button event handler
+  // Move fullscreen button event handler setup to the top of initializeApp
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   if (fullscreenBtn) {
     fullscreenBtn.addEventListener('click', (e) => {

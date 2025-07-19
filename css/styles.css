@@ -79,6 +79,27 @@ header h1 {
   transform: scale(1.05);
 }
 
+#fullscreenBtn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 2.4rem;
+  height: 2.4rem;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+}
+#fullscreenBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent-color);
+  transform: scale(1.05);
+}
+
 /* Main layout */
 main {
   flex: 1;
@@ -384,7 +405,7 @@ main {
 
 /* File name bar styles */
 #fileNameBar {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -395,12 +416,9 @@ main {
   font-weight: 400;
   text-align: center;
   padding: 12px 0 8px 0;
-  letter-spacing: 0.01em;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-  user-select: none;
-  pointer-events: none;
   display: none;
   backdrop-filter: blur(8px);
+  pointer-events: none;
 }
 
 /* Responsive design */
