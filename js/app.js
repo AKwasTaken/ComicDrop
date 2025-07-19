@@ -1,5 +1,4 @@
-import { handleFileInput, handleDrop } from './fileHandler.js';
-import { ComicReader } from './reader.js';
+// No imports; use global window objects
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -8,6 +7,9 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 const errorContainer = document.getElementById('errorContainer');
 const readerContainer = document.getElementById('readerContainer');
+const prevPageBtn = document.getElementById('prevPageBtn');
+const nextPageBtn = document.getElementById('nextPageBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
 
 let comicReader = null;
 
@@ -81,11 +83,13 @@ async function processFile(file) {
   resetUI();
   try {
     showProgress(5, 'Validating file...');
-    const result = await handleFileInput(file, showProgress);
+    // TODO: Add support for CBR, CB7, and more formats using 7zip-wasm/libarchive.js
+    const result = await window.handleFileInput(file, showProgress);
     if (result && result.images && result.images.length) {
-      comicReader = new ComicReader(result.images);
+      comicReader = new window.ComicReader(result.images);
       showReader();
       comicReader.displayPage(0);
+      updateNavButtons();
     } else {
       showError('No images found in archive.');
     }
@@ -96,8 +100,49 @@ async function processFile(file) {
   }
 }
 
-// Navigation controls (to be implemented in Phase 2)
-// ...
+function updateNavButtons() {
+  if (!comicReader) return;
+  prevPageBtn.disabled = comicReader.currentPage === 0;
+  nextPageBtn.disabled = comicReader.currentPage === comicReader.images.length - 1;
+}
+
+function goToPrevPage() {
+  if (comicReader && comicReader.currentPage > 0) {
+    comicReader.displayPage(comicReader.currentPage - 1);
+    updateNavButtons();
+  } else {
+    showError('Already at the first page.');
+  }
+}
+
+function goToNextPage() {
+  if (comicReader && comicReader.currentPage < comicReader.images.length - 1) {
+    comicReader.displayPage(comicReader.currentPage + 1);
+    updateNavButtons();
+  } else {
+    showError('Already at the last page.');
+  }
+}
+
+function toggleFullscreen() {
+  const elem = document.documentElement;
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+prevPageBtn.addEventListener('click', goToPrevPage);
+nextPageBtn.addEventListener('click', goToNextPage);
+fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+document.addEventListener('keydown', e => {
+  if (!comicReader) return;
+  if (e.key === 'ArrowLeft') goToPrevPage();
+  if (e.key === 'ArrowRight') goToNextPage();
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
 
 // Expose for debugging
 window._comicReader = () => comicReader; 

@@ -34,12 +34,9 @@
     <div id="jszipMissing" class="error-container" style="display:none;">JSZip library not loaded. Please add <code>jszip.min.js</code> to <code>lib/</code> folder.</div>
   </main>
   <div id="errorContainer" class="error-container" style="display:none;"></div>
-  <script>
-    if (!window.JSZip) {
-      document.getElementById('jszipMissing').style.display = 'flex';
-    }
-  </script>
-  <script src="lib/jszip.min.js"></script>
-  <script src="js/app.js"></script>
+  <script src="lib/jszip.min.js" defer></script>
+  <script src="js/fileHandler.js" defer></script>
+  <script src="js/reader.js" defer></script>
+  <script src="js/app.js" defer></script>
 </body>
 </html> 

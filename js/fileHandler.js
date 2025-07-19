@@ -1,7 +1,17 @@
 // import JSZip from '../lib/jszip.min.js';
-import { naturalSort } from './utils.js';
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'];
+
+/**
+ * Natural sort for filenames (e.g., page1, page2, page10)
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function naturalSort(a, b) {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+}
+window.naturalSort = naturalSort;
 
 /**
  * Handle file input for CBZ (ZIP) files. Returns { images: [Blob URLs] }
@@ -9,7 +19,7 @@ const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'];
  * @param {function} progressCallback
  * @returns {Promise<{images: string[]}>}
  */
-export async function handleFileInput(file, progressCallback) {
+async function handleFileInput(file, progressCallback) {
   if (!file || !file.name) throw new Error('No file selected.');
   if (!window.JSZip) throw new Error('JSZip library not loaded. Please ensure jszip.min.js is in the lib/ folder.');
   const ext = file.name.toLowerCase().split('.').pop();
@@ -27,7 +37,7 @@ export async function handleFileInput(file, progressCallback) {
     .filter(f => !f.dir && IMAGE_EXTENSIONS.some(ext => f.name.toLowerCase().endsWith(ext)));
   if (!imageFiles.length) throw new Error('No images found in archive.');
   // Natural sort
-  imageFiles.sort((a, b) => naturalSort(a.name, b.name));
+  imageFiles.sort((a, b) => window.naturalSort(a.name, b.name));
   const images = [];
   for (let i = 0; i < imageFiles.length; i++) {
     progressCallback(10 + Math.floor(80 * (i / imageFiles.length)), `Extracting page ${i+1}...`);
@@ -36,4 +46,5 @@ export async function handleFileInput(file, progressCallback) {
   }
   progressCallback(100, 'Done');
   return { images };
-} 
+}
+window.handleFileInput = handleFileInput; 

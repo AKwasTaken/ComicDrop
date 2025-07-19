@@ -1,7 +1,7 @@
 /**
  * ComicReader manages comic page display and navigation.
  */
-export class ComicReader {
+class ComicReader {
   /**
    * @param {string[]} images - Array of image blob URLs
    */
@@ -26,4 +26,5 @@ export class ComicReader {
     this.pageContainer.appendChild(img);
     this.pageCounter.textContent = `Page ${index + 1} of ${this.images.length}`;
   }
-} 
+}
+window.ComicReader = ComicReader; 
