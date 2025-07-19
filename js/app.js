@@ -3,6 +3,108 @@
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', function() {
   initializeApp();
+  // Add minimalistic arrows
+  const leftArrow = document.createElement('button');
+  leftArrow.id = 'edgeLeftArrow';
+  leftArrow.innerHTML = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="14" fill="rgba(0,0,0,0.18)"/><path d="M17.5 7L11 14L17.5 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  leftArrow.title = 'Previous Page';
+  leftArrow.style.position = 'fixed';
+  leftArrow.style.left = '10px';
+  leftArrow.style.top = '50%';
+  leftArrow.style.transform = 'translateY(-50%)';
+  leftArrow.style.zIndex = '1001';
+  leftArrow.style.background = 'none';
+  leftArrow.style.border = 'none';
+  leftArrow.style.padding = '0';
+  leftArrow.style.cursor = 'pointer';
+  leftArrow.style.opacity = '0.8';
+  leftArrow.style.display = 'none';
+  leftArrow.style.width = '40px';
+  leftArrow.style.height = '40px';
+
+  const rightArrow = document.createElement('button');
+  rightArrow.id = 'edgeRightArrow';
+  rightArrow.innerHTML = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="14" fill="rgba(0,0,0,0.18)"/><path d="M10.5 7L17 14L10.5 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  rightArrow.title = 'Next Page';
+  rightArrow.style.position = 'fixed';
+  rightArrow.style.right = '10px';
+  rightArrow.style.top = '50%';
+  rightArrow.style.transform = 'translateY(-50%)';
+  rightArrow.style.zIndex = '1001';
+  rightArrow.style.background = 'none';
+  rightArrow.style.border = 'none';
+  rightArrow.style.padding = '0';
+  rightArrow.style.cursor = 'pointer';
+  rightArrow.style.opacity = '0.8';
+  rightArrow.style.display = 'none';
+  rightArrow.style.width = '40px';
+  rightArrow.style.height = '40px';
+
+  document.body.appendChild(leftArrow);
+  document.body.appendChild(rightArrow);
+
+  // Navigation logic for arrows
+  leftArrow.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (window._comicReader() && window._comicReader().prevPage) window._comicReader().prevPage();
+  });
+  rightArrow.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (window._comicReader() && window._comicReader().nextPage) window._comicReader().nextPage();
+  });
+
+  // Show/hide arrows when reader is visible
+  const showArrows = () => {
+    leftArrow.style.display = 'block';
+    rightArrow.style.display = 'block';
+  };
+  const hideArrows = () => {
+    leftArrow.style.display = 'none';
+    rightArrow.style.display = 'none';
+  };
+
+  // 3. Tap-to-hide/show UI elements
+  let uiHidden = false;
+  function setUIHidden(hidden) {
+    uiHidden = hidden;
+    // Hide/show nav controls
+    if (document.getElementById('navControls')) {
+      document.getElementById('navControls').style.display = hidden ? 'none' : '';
+    }
+    // Hide/show site header
+    if (document.getElementById('siteHeader')) {
+      document.getElementById('siteHeader').style.display = hidden ? 'none' : '';
+    }
+    // Hide/show arrows
+    if (hidden) {
+      hideArrows();
+    } else {
+      showArrows();
+    }
+  }
+
+  // Tap/click anywhere on the reader container toggles UI
+  if (document.getElementById('readerContainer')) {
+    document.getElementById('readerContainer').addEventListener('click', function(e) {
+      // Only toggle if not clicking on nav controls or arrows
+      if (e.target.closest('#navControls') || e.target.closest('#edgeLeftArrow') || e.target.closest('#edgeRightArrow')) return;
+      setUIHidden(!uiHidden);
+    });
+  }
+
+  // Show arrows when reader is shown, hide otherwise
+  const origShowReader = ui.showReader.bind(ui);
+  ui.showReader = function() {
+    origShowReader();
+    showArrows();
+    setUIHidden(false);
+  };
+  const origResetUI = ui.resetUI.bind(ui);
+  ui.resetUI = function() {
+    origResetUI();
+    hideArrows();
+    setUIHidden(false);
+  };
 });
 
 function initializeApp() {
@@ -568,20 +670,7 @@ function initializeApp() {
       if (e.touches.length === 0) {
         touchPanning = false;
       }
-      // Swipe navigation
-      if (!touchPanning && swipeStartX !== null && e.changedTouches.length === 1) {
-        const endX = e.changedTouches[0].clientX;
-        const dx = endX - swipeStartX;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.changedTouches[0].clientY - swipeStartY)) {
-          if (dx < 0) {
-            if (window._comicReader() && window._comicReader().nextPage) window._comicReader().nextPage();
-          } else {
-            if (window._comicReader() && window._comicReader().prevPage) window._comicReader().prevPage();
-          }
-        }
-        swipeStartX = null;
-        swipeStartY = null;
-      }
+      // Removed: swipe navigation
     });
   }
 
