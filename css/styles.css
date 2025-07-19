@@ -389,16 +389,18 @@ main {
   left: 0;
   right: 0;
   z-index: 1002;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0,0,0,0.7);
   color: #fff;
-  font-size: 1.2em;
-  font-weight: 600;
+  font-size: 1.3em;
+  font-weight: 400;
   text-align: center;
-  padding: 14px 0 10px 0;
+  padding: 12px 0 8px 0;
   letter-spacing: 0.01em;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
   user-select: none;
   pointer-events: none;
+  display: none;
+  backdrop-filter: blur(8px);
 }
 
 /* Responsive design */

@@ -642,6 +642,15 @@ function initializeApp() {
     }
   };
 
+  // Add fullscreen button event handler
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      eventHandlers.toggleFullscreen();
+    });
+  }
+
   // Initialize event handlers
   eventHandlers.setupDragAndDrop();
   eventHandlers.setupFileInput();
