@@ -1,19 +1,7 @@
-// import JSZip from '../lib/jszip.min.js';
-
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'];
 
 // --- Add supported archive extensions ---
 const ARCHIVE_EXTENSIONS = ['cbz', 'zip', 'cbr', 'rar', 'cb7', '7z'];
-
-/**
- * Natural sort for filenames (e.g., page1, page2, page10)
- * @param {string} a
- * @param {string} b
- * @returns {number}
- */
-function naturalSort(a, b) {
-  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-}
 
 /**
  * Validate file type and size
@@ -52,7 +40,7 @@ async function processImages(zip, progressCallback) {
   }
   
   // Natural sort for proper page order
-  imageFiles.sort((a, b) => naturalSort(a.name, b.name));
+  imageFiles.sort((a, b) => window.naturalSort(a.name, b.name));
   
   const images = [];
   const totalFiles = imageFiles.length;
@@ -89,7 +77,7 @@ async function processRar(file, progressCallback) {
   const { files } = extractor.extract({ password: undefined });
   const imageFiles = files.filter(f => f.fileData && IMAGE_EXTENSIONS.some(ext => f.fileName.toLowerCase().endsWith(ext)));
   if (!imageFiles.length) throw new Error('No images found in archive.');
-  imageFiles.sort((a, b) => naturalSort(a.fileName, b.fileName));
+  imageFiles.sort((a, b) => window.naturalSort(a.fileName, b.fileName));
   const images = imageFiles.map(f => URL.createObjectURL(new Blob([f.fileData])));
   progressCallback(100, 'Done');
   return images;
@@ -113,7 +101,7 @@ async function process7z(file, progressCallback) {
   // List files in /out
   const files = js7z.FS.readdir('/out').filter(name => IMAGE_EXTENSIONS.some(ext => name.toLowerCase().endsWith(ext)));
   if (!files.length) throw new Error('No images found in archive.');
-  files.sort(naturalSort);
+  files.sort(window.naturalSort);
   const images = files.map(name => {
     const data = js7z.FS.readFile('/out/' + name);
     return URL.createObjectURL(new Blob([data]));
@@ -146,7 +134,7 @@ async function handleFileInput(file, progressCallback) {
       });
       const files = js7z.FS.readdir('/out').filter(name => IMAGE_EXTENSIONS.some(ext => name.toLowerCase().endsWith(ext)));
       if (!files.length) throw new Error('No images found in archive.');
-      files.sort(naturalSort);
+      files.sort(window.naturalSort);
       for (let i = 0; i < files.length; i++) {
         progressCallback(10 + Math.floor(80 * (i / files.length)), `Extracting page ${i + 1}/${files.length}...`);
         const data = js7z.FS.readFile('/out/' + files[i]);
@@ -158,7 +146,7 @@ async function handleFileInput(file, progressCallback) {
       const archive = await Unarchiver.open(file);
       const imageEntries = archive.entries.filter(entry => entry.is_file && IMAGE_EXTENSIONS.some(ext => entry.name.toLowerCase().endsWith(ext)));
       if (!imageEntries.length) throw new Error('No images found in archive.');
-      imageEntries.sort((a, b) => naturalSort(a.name, b.name));
+      imageEntries.sort((a, b) => window.naturalSort(a.name, b.name));
       for (let i = 0; i < imageEntries.length; i++) {
         progressCallback(10 + Math.floor(80 * (i / imageEntries.length)), `Extracting page ${i + 1}/${imageEntries.length}...`);
         try {
@@ -182,4 +170,12 @@ async function handleFileInput(file, progressCallback) {
 
 // Expose functions globally
 window.naturalSort = naturalSort;
-window.handleFileInput = handleFileInput; 
+window.handleFileInput = handleFileInput;
+
+// Provide a global fileHandler object for app.js compatibility
+window.fileHandler = {
+  async processFile(file) {
+    // Use a no-op progress callback for direct calls
+    return window.handleFileInput(file, () => {});
+  }
+}; 

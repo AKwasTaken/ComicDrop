@@ -354,128 +354,6 @@ function initializeApp() {
     }
   };
 
-  // Remove the entire advanced zoom object and all its methods
-  // const zoom = { ... } (lines 330-591 approx) -- deleted
-
-  // File handling
-  const fileHandler = {
-    async processFile(file) {
-      ui.resetUI();
-      try {
-        utils.showProgress(5, 'Validating file...');
-        const result = await window.handleFileInput(file, utils.showProgress);
-        if (result && result.images && result.images.length) {
-          // Set and show the file name bar before showing the reader
-          window.currentFileName = file.name || '';
-          const fileNameBar = document.getElementById('fileNameBar');
-          if (fileNameBar) {
-            fileNameBar.textContent = window.currentFileName;
-            fileNameBar.style.display = '';
-          }
-          state.comicReader = new window.ComicReader(result.images);
-          ui.showReader();
-          state.comicReader.displayPage(0);
-          ui.updateNavButtons();
-        } else {
-          utils.showError('No images found in archive.');
-        }
-      } catch (err) {
-        utils.showError(err.message || 'Failed to open file.');
-      } finally {
-        utils.hideProgress();
-      }
-    }
-  };
-
-  // Event handlers
-  const eventHandlers = {
-    setupDragAndDrop() {
-      if (!elements.dropZone) return;
-      
-      const dragEvents = ['dragenter', 'dragover', 'dragleave', 'drop'];
-      dragEvents.forEach(eventName => {
-        elements.dropZone.addEventListener(eventName, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        });
-      });
-      
-      elements.dropZone.addEventListener('dragenter', () => elements.dropZone.classList.add('dragover'));
-      elements.dropZone.addEventListener('dragover', () => elements.dropZone.classList.add('dragover'));
-      elements.dropZone.addEventListener('dragleave', () => elements.dropZone.classList.remove('dragover'));
-      elements.dropZone.addEventListener('drop', (e) => {
-        elements.dropZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length) {
-          fileHandler.processFile(files[0]);
-        }
-      });
-      
-      elements.dropZone.addEventListener('click', () => {
-        if (elements.fileInput) elements.fileInput.click();
-      });
-    },
-
-    setupFileInput() {
-      if (elements.fileInput) {
-        elements.fileInput.addEventListener('change', (e) => {
-          if (elements.fileInput.files.length) {
-            fileHandler.processFile(elements.fileInput.files[0]);
-          }
-        });
-      }
-      
-      if (elements.fileLabel) {
-        elements.fileLabel.addEventListener('click', (e) => {
-          e.preventDefault();
-          if (elements.fileInput) elements.fileInput.click();
-        });
-      }
-    },
-
-    setupKeyboard() {
-      document.addEventListener('keydown', (e) => {
-        if (!state.comicReader) return;
-        
-        const keyHandlers = {
-          'ArrowLeft': () => navigation.goToPrevPage(),
-          'ArrowRight': () => navigation.goToNextPage(),
-          'Home': () => navigation.goToFirstPage(),
-          'End': () => navigation.goToLastPage(),
-          'f': () => this.toggleFullscreen(),
-          'F': () => this.toggleFullscreen()
-          // Removed: zoom in/out/reset/fit keys
-        };
-        
-        if (keyHandlers[e.key]) {
-          e.preventDefault();
-          keyHandlers[e.key]();
-        }
-      });
-    },
-
-    setupMouseWheel() {
-      // No-op: basic zoom is handled per-image
-    },
-
-    setupDoubleClick() {
-      // No-op: basic zoom is handled per-image
-    },
-
-    setupPanning() {
-      // No-op: basic zoom is handled per-image
-    },
-
-    toggleFullscreen() {
-      const elem = document.documentElement;
-      if (!document.fullscreenElement) {
-        elem.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
-    }
-  };
-
   // --- Minimal, robust zoom and navigation from scratch ---
 
   let zoomScale = 1.0;
@@ -668,7 +546,100 @@ function initializeApp() {
     const ext = file.name.toLowerCase().split('.').pop();
     if (ext === 'cbr' || ext === 'rar') await loadUnrar();
     if (ext === 'cb7' || ext === '7z') await loadJS7z();
-    return origProcessFile.apply(this, arguments);
+    // UI logic:
+    ui.resetUI();
+    try {
+      utils.showProgress(5, 'Validating file...');
+      const result = await window.handleFileInput(file, utils.showProgress);
+      if (result && result.images && result.images.length) {
+        window.currentFileName = file.name || '';
+        const fileNameBar = document.getElementById('fileNameBar');
+        if (fileNameBar) {
+          fileNameBar.textContent = window.currentFileName;
+          fileNameBar.style.display = '';
+        }
+        state.comicReader = new window.ComicReader(result.images);
+        ui.showReader();
+        state.comicReader.displayPage(0);
+        ui.updateNavButtons();
+      } else {
+        utils.showError('No images found in archive.');
+      }
+    } catch (err) {
+      utils.showError(err.message || 'Failed to open file.');
+    } finally {
+      utils.hideProgress();
+    }
+  };
+
+  // Restore eventHandlers for event setup
+  const eventHandlers = {
+    setupDragAndDrop() {
+      if (!elements.dropZone) return;
+      const dragEvents = ['dragenter', 'dragover', 'dragleave', 'drop'];
+      dragEvents.forEach(eventName => {
+        elements.dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      });
+      elements.dropZone.addEventListener('dragenter', () => elements.dropZone.classList.add('dragover'));
+      elements.dropZone.addEventListener('dragover', () => elements.dropZone.classList.add('dragover'));
+      elements.dropZone.addEventListener('dragleave', () => elements.dropZone.classList.remove('dragover'));
+      elements.dropZone.addEventListener('drop', (e) => {
+        elements.dropZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length) {
+          fileHandler.processFile(files[0]);
+        }
+      });
+      elements.dropZone.addEventListener('click', () => {
+        if (elements.fileInput) elements.fileInput.click();
+      });
+    },
+    setupFileInput() {
+      if (elements.fileInput) {
+        elements.fileInput.addEventListener('change', (e) => {
+          if (elements.fileInput.files.length) {
+            fileHandler.processFile(elements.fileInput.files[0]);
+          }
+        });
+      }
+      if (elements.fileLabel) {
+        elements.fileLabel.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (elements.fileInput) elements.fileInput.click();
+        });
+      }
+    },
+    setupKeyboard() {
+      document.addEventListener('keydown', (e) => {
+        if (!state.comicReader) return;
+        const keyHandlers = {
+          'ArrowLeft': () => navigation.goToPrevPage(),
+          'ArrowRight': () => navigation.goToNextPage(),
+          'Home': () => navigation.goToFirstPage(),
+          'End': () => navigation.goToLastPage(),
+          'f': () => eventHandlers.toggleFullscreen(),
+          'F': () => eventHandlers.toggleFullscreen()
+        };
+        if (keyHandlers[e.key]) {
+          e.preventDefault();
+          keyHandlers[e.key]();
+        }
+      });
+    },
+    setupMouseWheel() {},
+    setupDoubleClick() {},
+    setupPanning() {},
+    toggleFullscreen() {
+      const elem = document.documentElement;
+      if (!document.fullscreenElement) {
+        elem.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
   };
 
   // Initialize event handlers
