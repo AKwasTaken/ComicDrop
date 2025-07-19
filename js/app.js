@@ -685,6 +685,39 @@ function initializeApp() {
     }, 10);
   };
 
+  // --- Dynamically load unrar.js and 7z-wasm if needed ---
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  function loadUnrar() {
+    if (window.UNRAR) return Promise.resolve();
+    return loadScript('ComicDrop/lib/unrar.min.js');
+  }
+  function loadJS7z() {
+    if (window.JS7z) return Promise.resolve();
+    window.Module = window.Module || {};
+    window.Module.locateFile = function(path) {
+      if (path.endsWith('.wasm')) return 'ComicDrop/lib/7zz.wasm';
+      return path;
+    };
+    return loadScript('ComicDrop/lib/7zz.umd.js');
+  }
+  // Patch fileHandler.processFile to load libraries as needed
+  const origProcessFile = fileHandler.processFile;
+  fileHandler.processFile = async function(file) {
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (ext === 'cbr' || ext === 'rar') await loadUnrar();
+    if (ext === 'cb7' || ext === '7z') await loadJS7z();
+    return origProcessFile.apply(this, arguments);
+  };
+
   // Initialize event handlers
   eventHandlers.setupDragAndDrop();
   eventHandlers.setupFileInput();
