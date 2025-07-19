@@ -8,26 +8,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <header>
+  <header id="siteHeader">
     <h1>CBR Comic Reader</h1>
     <button id="settingsBtn" title="Settings">⚙️</button>
   </header>
   <main>
-    <div id="dropZone" class="drop-zone card">
+    <div id="dropZone" class="drop-zone">
       <p>Drag & drop your CBR/CBZ/CB7 file here<br>or <label for="fileInput" class="file-label">choose a file</label>.</p>
       <input type="file" id="fileInput" accept=".cbz,.cbr,.cb7,.zip,.rar,.7z" style="display:none">
     </div>
-    <div id="progressContainer" class="progress-container card" style="display:none;">
+    <div id="progressContainer" class="progress-container" style="display:none;">
       <div id="progressBar" class="progress-bar"></div>
       <span id="progressText"></span>
     </div>
-    <div id="readerContainer" class="reader-container card" style="display:none;">
-      <div id="navControls" class="nav-controls">
-        <button id="prevPageBtn" title="Previous Page">⟨</button>
-        <span id="pageCounter">Page 1 of 1</span>
-        <button id="nextPageBtn" title="Next Page">⟩</button>
-        <button id="fullscreenBtn" title="Fullscreen">⛶</button>
-      </div>
+    <div id="readerContainer" class="reader-container" style="display:none;">
+      <div id="navControls" class="nav-controls"></div>
       <div id="comicPage" class="comic-page"></div>
     </div>
     <noscript><div class="error-container">JavaScript is required to use this app.</div></noscript>

@@ -9,7 +9,7 @@ class ComicReader {
     this.images = images;
     this.currentPage = 0;
     this.pageContainer = document.getElementById('comicPage');
-    this.pageCounter = document.getElementById('pageCounter');
+    // Remove pageCounter reference since it's managed by app.js
   }
 
   /**
@@ -19,12 +19,16 @@ class ComicReader {
   displayPage(index) {
     if (index < 0 || index >= this.images.length) return;
     this.currentPage = index;
-    this.pageContainer.innerHTML = '';
-    const img = document.createElement('img');
-    img.src = this.images[index];
-    img.alt = `Page ${index + 1}`;
-    this.pageContainer.appendChild(img);
-    this.pageCounter.textContent = `Page ${index + 1} of ${this.images.length}`;
+    
+    if (this.pageContainer) {
+      this.pageContainer.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = this.images[index];
+      img.alt = `Page ${index + 1}`;
+      this.pageContainer.appendChild(img);
+    }
+    
+    // Page counter update is now handled by app.js updateNavButtons()
   }
 }
 window.ComicReader = ComicReader; 
