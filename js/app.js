@@ -723,26 +723,4 @@ function initializeApp() {
   eventHandlers.setupMouseWheel();
   eventHandlers.setupDoubleClick();
   eventHandlers.setupPanning();
-
-  // Debug functions
-  window._comicReader = () => state.comicReader;
-  window.forceUpdatePageCounter = () => {
-    if (!state.comicReader) {
-      console.log('No comic reader to update');
-      return;
-    }
-    console.log('Force updating page counter...');
-    ui.updateNavButtons();
-  };
-  
-  // Test zoom functions
-  // window.testZoom = () => {
-  //   console.log('Testing zoom functionality...');
-  //   console.log('Current zoom state:', state.zoomState);
-  //   console.log('Image element:', zoom.getImageEl());
-  //   if (zoom.getImageEl()) {
-  //     console.log('Image natural size:', zoom.getImageEl().naturalWidth, 'x', zoom.getImageEl().naturalHeight);
-  //   }
-  //   zoom.calculateFitLevels();
-  // };
 }

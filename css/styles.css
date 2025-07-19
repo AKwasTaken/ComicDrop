@@ -59,47 +59,6 @@ header h1 {
   color: var(--text-primary);
 }
 
-#settingsBtn {
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  font-size: 1.4rem;
-  cursor: pointer;
-  border-radius: 50%;
-  width: 2.4rem;
-  height: 2.4rem;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#settingsBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.05);
-}
-
-#fullscreenBtn {
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  font-size: 1.4rem;
-  cursor: pointer;
-  border-radius: 50%;
-  width: 2.4rem;
-  height: 2.4rem;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 0.5rem;
-}
-#fullscreenBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--accent-color);
-  transform: scale(1.05);
-}
-
 /* Main layout */
 main {
   flex: 1;
@@ -352,14 +311,6 @@ main {
 }
 
 .comic-page img:active {
-  cursor: grabbing;
-}
-
-.comic-page img.zoomed {
-  cursor: grab;
-}
-
-.comic-page img.zoomed:active {
   cursor: grabbing;
 }
 
