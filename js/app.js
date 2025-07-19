@@ -32,9 +32,14 @@ function initializeApp() {
     fileNameBar: document.getElementById('fileNameBar'),
   };
 
+  const dropZoneOuter = document.querySelector('.drop-zone-outer');
+  const readerContainer = document.getElementById('readerContainer');
+
   // UI Management
   const ui = {
     showReader() {
+      if (dropZoneOuter) dropZoneOuter.style.display = 'none';
+      if (readerContainer) readerContainer.style.display = 'flex';
       if (elements.dropZone) elements.dropZone.style.display = 'none';
       if (elements.readerContainer) elements.readerContainer.style.display = 'flex';
       // Hide all header children except fullscreenBtn (now handled outside header)
@@ -99,6 +104,8 @@ function initializeApp() {
     },
 
     resetUI() {
+      if (dropZoneOuter) dropZoneOuter.style.display = '';
+      if (readerContainer) readerContainer.style.display = 'none';
       if (elements.dropZone) elements.dropZone.style.display = '';
       if (elements.readerContainer) elements.readerContainer.style.display = 'none';
       // Show all header children except fullscreenBtn (now handled outside header)
@@ -166,7 +173,7 @@ function initializeApp() {
           button.addEventListener('click', (e) => {
             console.log(`${key} clicked`, e);
             e.preventDefault();
-            e.stopPropagation();
+            // Removed e.stopPropagation() to fix nav button responsiveness
             buttonHandlers[key]();
           });
           button.style.cursor = 'pointer';
@@ -685,8 +692,11 @@ function initializeApp() {
           fileHandler.processFile(files[0]);
         }
       });
-      elements.dropZone.addEventListener('click', () => {
-        if (elements.fileInput) elements.fileInput.click();
+      elements.dropZone.addEventListener('click', (e) => {
+        // Only trigger if the click is directly on the drop zone, not on a child (like the label or input)
+        if (e.target === elements.dropZone && elements.fileInput) {
+          elements.fileInput.click();
+        }
       });
     },
     setupFileInput() {
@@ -697,12 +707,7 @@ function initializeApp() {
           }
         });
       }
-      if (elements.fileLabel) {
-        elements.fileLabel.addEventListener('click', (e) => {
-          e.preventDefault();
-          if (elements.fileInput) elements.fileInput.click();
-        });
-      }
+      // Removed redundant fileLabel click handler to prevent double file picker
     },
     setupKeyboard() {
       document.addEventListener('keydown', (e) => {
