@@ -175,15 +175,17 @@ main {
   align-items: center;
   justify-content: center;
   gap: 0.8rem;
-  background: var(--bg-overlay);
+  /* More translucent background */
+  background: rgba(20, 20, 20, 0.45); /* was var(--bg-overlay) */
   border-radius: var(--border-radius-large);
   padding: 0.6rem 1rem;
   box-shadow: var(--shadow);
   z-index: 20;
   opacity: 0;
   transition: var(--transition-slow);
-  backdrop-filter: var(--backdrop-blur);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Stronger blur for frosted glass effect */
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.13);
 }
 
 .reader-container:hover .nav-controls,
@@ -314,16 +316,49 @@ main {
   border-radius: 0;
   box-shadow: none;
   background: transparent;
-  transition: var(--transition);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   object-fit: contain;
   display: block;
   margin: 0 auto;
   cursor: grab;
   user-select: none;
+  transform-origin: center center;
+  will-change: transform;
 }
 
 .comic-page img:active {
   cursor: grabbing;
+}
+
+.comic-page img.zoomed {
+  cursor: grab;
+}
+
+.comic-page img.zoomed:active {
+  cursor: grabbing;
+}
+
+/* Zoom indicator */
+.zoom-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--bg-overlay);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 30;
+  pointer-events: none;
+}
+
+.zoom-indicator.show {
+  opacity: 1;
 }
 
 /* Error container */

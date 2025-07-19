@@ -18,7 +18,8 @@ function initializeApp() {
     comicPage: document.getElementById('comicPage'),
     siteHeader: document.getElementById('siteHeader'),
     navControls: document.getElementById('navControls'),
-    fileLabel: document.querySelector('.file-label')
+    fileLabel: document.querySelector('.file-label'),
+    zoomIndicator: document.getElementById('zoomIndicator')
   };
 
   // State management
@@ -28,7 +29,19 @@ function initializeApp() {
     fitMode: 'fit', // 'fit', 'width', 'height', 'custom'
     isEditingPage: false,
     isPanning: false,
-    panStart: { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 }
+    panStart: { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 },
+    // New zoom state
+    zoomState: {
+      level: 1,
+      targetLevel: 1,
+      isAnimating: false,
+      lastWheelTime: 0,
+      wheelDelta: 0,
+      naturalSize: { width: 0, height: 0 },
+      containerSize: { width: 0, height: 0 },
+      fitLevels: { width: 1, height: 1, fit: 1 },
+      currentFitMode: 'none' // 'none', 'height', 'width', 'fit'
+    }
   };
 
   // Utility functions
@@ -65,6 +78,28 @@ function initializeApp() {
       if (elements.navControls) {
         elements.navControls.classList.remove('editing');
       }
+    },
+
+    // Easing functions for smooth animations
+    easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    },
+
+    easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    },
+
+    // Debounce function
+    debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     }
   };
 
@@ -233,7 +268,7 @@ function initializeApp() {
         if (newPage >= 1 && newPage <= totalPages) {
           state.comicReader.displayPage(newPage - 1);
           this.updateNavButtons();
-          zoom.resetZoom();
+          // zoom.resetZoom(); // Removed as Panzoom handles zoom
         }
         utils.resetEditingState();
         this.updateNavButtons();
@@ -255,121 +290,303 @@ function initializeApp() {
     }
   };
 
-  // Navigation functions
+  // Navigation functionality
   const navigation = {
     goToFirstPage() {
-      console.log('goToFirstPage called');
-      if (state.comicReader && state.comicReader.currentPage !== 0) {
-        utils.resetEditingState();
+      if (state.comicReader) {
         state.comicReader.displayPage(0);
         ui.updateNavButtons();
-        zoom.resetZoom();
       }
     },
-    
+
     goToLastPage() {
-      console.log('goToLastPage called');
-      if (state.comicReader && state.comicReader.currentPage !== state.comicReader.images.length - 1) {
-        utils.resetEditingState();
+      if (state.comicReader) {
         state.comicReader.displayPage(state.comicReader.images.length - 1);
         ui.updateNavButtons();
-        zoom.resetZoom();
       }
     },
-    
+
     goToPrevPage() {
-      console.log('goToPrevPage called');
-      if (state.comicReader && state.comicReader.currentPage > 0) {
-        utils.resetEditingState();
-        state.comicReader.displayPage(state.comicReader.currentPage - 1);
+      if (state.comicReader && state.comicReader.prevPage()) {
         ui.updateNavButtons();
-        zoom.resetZoom();
       }
     },
-    
+
     goToNextPage() {
-      console.log('goToNextPage called');
-      if (state.comicReader && state.comicReader.currentPage < state.comicReader.images.length - 1) {
-        utils.resetEditingState();
-        state.comicReader.displayPage(state.comicReader.currentPage + 1);
+      if (state.comicReader && state.comicReader.nextPage()) {
         ui.updateNavButtons();
-        zoom.resetZoom();
       }
     }
   };
 
-  // Zoom functionality
+  // Advanced Zoom functionality
   const zoom = {
+    MIN_ZOOM: 0.1,
+    MAX_ZOOM: 8,
+    ZOOM_STEP: 0.1,
+    SNAP_THRESHOLD: 0.05, // 5% threshold for snapping
+    ANIMATION_DURATION: 300, // ms
+
     getImageEl() {
       return elements.comicPage ? elements.comicPage.querySelector('img') : null;
     },
 
+    // Calculate fit levels for different modes
+    calculateFitLevels() {
+      const img = this.getImageEl();
+      if (!img) {
+        console.log('No image element found for fit calculation');
+        return;
+      }
+
+      if (!img.naturalWidth || !img.naturalHeight) {
+        console.log('Image natural dimensions not available yet');
+        return;
+      }
+
+      const container = elements.comicPage;
+      if (!container) {
+        console.log('Container element not found for fit calculation');
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+
+      console.log('Container size:', containerRect.width, 'x', containerRect.height);
+      console.log('Natural image size:', naturalWidth, 'x', naturalHeight);
+
+      state.zoomState.naturalSize = { width: naturalWidth, height: naturalHeight };
+      state.zoomState.containerSize = { width: containerRect.width, height: containerRect.height };
+
+      // Calculate fit levels - scale to fill the target dimension
+      // If image is smaller than container, scale UP. If larger, scale DOWN.
+      const widthFit = containerRect.width / naturalWidth;  // Scale to fill container width
+      const heightFit = containerRect.height / naturalHeight; // Scale to fill container height
+      const fitLevel = Math.min(widthFit, heightFit); // Best fit (smaller scale to fit both dimensions)
+
+      state.zoomState.fitLevels = {
+        width: widthFit,
+        height: heightFit,
+        fit: fitLevel
+      };
+
+      console.log('Fit levels calculated:', state.zoomState.fitLevels);
+      console.log('Width fit will scale to:', (widthFit * 100).toFixed(1) + '%');
+      console.log('Height fit will scale to:', (heightFit * 100).toFixed(1) + '%');
+    },
+
+    // Smooth zoom animation
+    animateZoom(targetLevel, duration = this.ANIMATION_DURATION) {
+      if (state.zoomState.isAnimating) return;
+
+      const startLevel = state.zoomState.level;
+      const startTime = performance.now();
+
+      state.zoomState.isAnimating = true;
+      state.zoomState.targetLevel = targetLevel;
+
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = utils.easeOutCubic(progress);
+
+        const currentLevel = startLevel + (targetLevel - startLevel) * easedProgress;
+        this.setZoomLevel(currentLevel);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          state.zoomState.isAnimating = false;
+          this.setZoomLevel(targetLevel);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    },
+
+    // Set zoom level with constraints
+    setZoomLevel(level) {
+      const clampedLevel = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, level));
+      state.zoomState.level = clampedLevel;
+      this.applyZoom();
+    },
+
+    // Apply zoom with smooth transitions
     applyZoom() {
       const img = this.getImageEl();
       if (!img) return;
+
+      const level = state.zoomState.level;
       
-      const zoomStyles = {
-        fit: {
-          transform: '',
-          maxWidth: '100vw',
-          maxHeight: '100vh',
-          width: 'auto',
-          height: 'auto'
-        },
-        width: {
-          transform: '',
-          width: '100vw',
-          height: 'auto',
-          maxWidth: 'none',
-          maxHeight: 'none'
-        },
-        height: {
-          transform: '',
-          height: '100vh',
-          width: 'auto',
-          maxWidth: 'none',
-          maxHeight: 'none'
-        },
-        custom: {
-          maxWidth: 'none',
-          maxHeight: 'none',
-          width: 'auto',
-          height: 'auto',
-          transform: `scale(${state.zoomLevel})`
+      // Add smooth transition
+      img.style.transition = `transform ${this.ANIMATION_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+      img.style.transform = `scale(${level})`;
+      
+      // Update zoom indicator
+      this.updateZoomIndicator(level);
+      
+      // Add/remove zoomed class for cursor styling
+      if (level > 1) {
+        img.classList.add('zoomed');
+      } else {
+        img.classList.remove('zoomed');
+      }
+      
+      // Remove transition after animation completes
+      setTimeout(() => {
+        if (img) {
+          img.style.transition = '';
         }
-      };
+      }, this.ANIMATION_DURATION);
+    },
+
+    // Update zoom indicator
+    updateZoomIndicator(level) {
+      if (!elements.zoomIndicator) return;
       
-      Object.assign(img.style, zoomStyles[state.fitMode]);
+      const percentage = Math.round(level * 100);
+      elements.zoomIndicator.textContent = `${percentage}%`;
+      
+      // Show indicator briefly when zooming
+      elements.zoomIndicator.classList.add('show');
+      clearTimeout(this.zoomIndicatorTimeout);
+      this.zoomIndicatorTimeout = setTimeout(() => {
+        if (elements.zoomIndicator) {
+          elements.zoomIndicator.classList.remove('show');
+        }
+      }, 1500);
     },
 
+    // Zoom in with smooth animation
     zoomIn() {
-      state.fitMode = 'custom';
-      state.zoomLevel = Math.min(state.zoomLevel * 1.03, 8);
-      this.applyZoom();
+      const currentLevel = state.zoomState.level;
+      const newLevel = currentLevel * 1.2;
+      this.animateZoom(newLevel);
     },
 
+    // Zoom out with smooth animation
     zoomOut() {
-      state.fitMode = 'custom';
-      state.zoomLevel = Math.max(state.zoomLevel / 1.03, 0.1);
-      this.applyZoom();
+      const currentLevel = state.zoomState.level;
+      const newLevel = currentLevel / 1.2;
+      this.animateZoom(newLevel);
     },
 
+    // Reset zoom with snap-to-fit
     resetZoom() {
-      state.fitMode = 'fit';
-      state.zoomLevel = 1;
-      this.applyZoom();
+      console.log('Resetting zoom...');
+      this.calculateFitLevels();
+      const defaultLevel = 1.0;
+      this.animateZoom(defaultLevel);
     },
 
+    // Fit to width
     fitToWidth() {
-      state.fitMode = 'width';
-      state.zoomLevel = 1;
-      this.applyZoom();
+      this.calculateFitLevels();
+      const widthLevel = state.zoomState.fitLevels.width;
+      this.animateZoom(widthLevel);
     },
 
+    // Fit to height
     fitToHeight() {
-      state.fitMode = 'height';
-      state.zoomLevel = 1;
-      this.applyZoom();
+      this.calculateFitLevels();
+      const heightLevel = state.zoomState.fitLevels.height;
+      this.animateZoom(heightLevel);
+    },
+
+    // Mouse wheel zoom with smooth handling
+    handleWheelZoom(deltaY, clientX, clientY) {
+      console.log('Wheel zoom triggered, deltaY:', deltaY);
+      
+      const now = performance.now();
+      const timeSinceLastWheel = now - state.zoomState.lastWheelTime;
+      
+      // Accumulate wheel delta for smoother zooming
+      state.zoomState.wheelDelta += deltaY;
+      
+      // Process accumulated delta every 15ms for even more responsive zooming
+      if (timeSinceLastWheel > 15) {
+        // Greatly increase sensitivity: much larger multiplier
+        const zoomFactor = Math.exp(-state.zoomState.wheelDelta * 0.012); // was 0.0035
+        const currentLevel = state.zoomState.level;
+        let newLevel = currentLevel * zoomFactor;
+        const fitLevel = state.zoomState.fitLevels.fit || 1;
+        // Snap if very close and moving toward fit
+        const SNAP_RANGE = 0.10; // 10% range for magnetic snap
+        if (
+          Math.abs(newLevel - fitLevel) < SNAP_RANGE &&
+          ((currentLevel > fitLevel && newLevel < fitLevel) || (currentLevel < fitLevel && newLevel > fitLevel))
+        ) {
+          newLevel = fitLevel;
+        }
+        this.animateZoom(newLevel, 60); // Even faster animation for wheel zoom
+        state.zoomState.wheelDelta = 0;
+        state.zoomState.lastWheelTime = now;
+      }
+    },
+
+    // Check if we should snap to fit
+    checkSnapToFit() {
+      const currentLevel = state.zoomState.level;
+      const fitLevel = state.zoomState.fitLevels.fit;
+      
+      if (Math.abs(currentLevel - fitLevel) < this.SNAP_THRESHOLD) {
+        this.animateZoom(fitLevel);
+        return true;
+      }
+      
+      return false;
+    },
+
+    // Initialize zoom for new image
+    initializeZoom() {
+      const img = this.getImageEl();
+      if (!img) return;
+
+      // Reset zoom state to 100%
+      state.zoomState.level = 1.0;
+      state.zoomState.targetLevel = 1.0;
+      state.zoomState.isAnimating = false;
+      state.zoomState.currentFitMode = 'none';
+      // Wait for image to load natural dimensions
+      if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+        console.log('Image not loaded yet, waiting for onload...');
+        img.onload = () => {
+          console.log('Image loaded, natural size:', img.naturalWidth, 'x', img.naturalHeight);
+          this.calculateFitLevels();
+          this.animateZoom(1.0);
+        };
+      } else {
+        console.log('Image already loaded, natural size:', img.naturalWidth, 'x', img.naturalHeight);
+        this.calculateFitLevels();
+        this.animateZoom(1.0);
+      }
+    },
+
+    // Replace cycleFitMode with toggleFitMode for double-click
+    // Only toggle between 100% and fit-to-width
+    toggleFitMode() {
+      const EPSILON = 0.01;
+      const currentLevel = state.zoomState.level;
+      const widthFit = state.zoomState.fitLevels.width;
+      // If not at 100%, go to 100%
+      if (Math.abs(currentLevel - 1.0) > EPSILON && Math.abs(currentLevel - widthFit) > EPSILON) {
+        state.zoomState.currentFitMode = 'none';
+        this.animateZoom(1.0, 150);
+      } else if (Math.abs(currentLevel - 1.0) < EPSILON) {
+        // If at 100%, go to fit-to-width
+        state.zoomState.currentFitMode = 'width';
+        this.animateZoom(widthFit, 150);
+      } else if (Math.abs(currentLevel - widthFit) < EPSILON) {
+        // If at fit-to-width, go to 100%
+        state.zoomState.currentFitMode = 'none';
+        this.animateZoom(1.0, 150);
+      } else {
+        // Fallback: go to 100%
+        state.zoomState.currentFitMode = 'none';
+        this.animateZoom(1.0, 150);
+      }
     }
   };
 
@@ -385,7 +602,7 @@ function initializeApp() {
           ui.showReader();
           state.comicReader.displayPage(0);
           ui.updateNavButtons();
-          zoom.resetZoom();
+          zoom.initializeZoom();
         } else {
           utils.showError('No images found in archive.');
         }
@@ -457,10 +674,13 @@ function initializeApp() {
           '+': () => zoom.zoomIn(),
           '=': () => zoom.zoomIn(),
           '-': () => zoom.zoomOut(),
-          '0': () => zoom.resetZoom()
+          '0': () => zoom.resetZoom(),
+          'w': () => zoom.fitToWidth(),
+          'h': () => zoom.fitToHeight()
         };
         
         if (keyHandlers[e.key]) {
+          e.preventDefault();
           keyHandlers[e.key]();
         }
       });
@@ -469,12 +689,30 @@ function initializeApp() {
     setupMouseWheel() {
       if (elements.comicPage) {
         elements.comicPage.addEventListener('wheel', (e) => {
+          console.log('Wheel event detected:', { ctrlKey: e.ctrlKey, metaKey: e.metaKey, deltaY: e.deltaY });
+          
+          // Handle Ctrl/Cmd + wheel zoom
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            if (e.deltaY < 0) zoom.zoomIn();
-            else zoom.zoomOut();
+            zoom.handleWheelZoom(e.deltaY, e.clientX, e.clientY);
+          }
+          // Handle trackpad pinch-to-zoom (larger delta values)
+          else if (Math.abs(e.deltaY) > 50) {
+            e.preventDefault();
+            zoom.handleWheelZoom(e.deltaY, e.clientX, e.clientY);
           }
         }, { passive: false });
+      }
+    },
+
+    setupDoubleClick() {
+      if (elements.comicPage) {
+        elements.comicPage.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          if (e.target.tagName === 'IMG') {
+            zoom.toggleFitMode();
+          }
+        });
       }
     },
 
@@ -482,7 +720,8 @@ function initializeApp() {
       if (!elements.comicPage) return;
       
       elements.comicPage.addEventListener('mousedown', (e) => {
-        if (state.fitMode !== 'custom') return;
+        if (state.zoomState.level <= 1) return; // Only pan when zoomed in
+        
         state.isPanning = true;
         elements.comicPage.style.cursor = 'grabbing';
         state.panStart.x = e.pageX - elements.comicPage.offsetLeft;
@@ -521,13 +760,60 @@ function initializeApp() {
     }
   };
 
-  // Override ComicReader displayPage to ensure proper updates
+  // Remove all custom zoom/pan logic and state
+  // Add Panzoom integration
+
+  let panzoomInstance = null;
+
+  function setupPanzoom(img) {
+    if (panzoomInstance) {
+      panzoomInstance.destroy();
+      panzoomInstance = null;
+    }
+    panzoomInstance = Panzoom(img, {
+      maxScale: 8,
+      minScale: 0.1,
+      contain: 'outside',
+      animate: true,
+      duration: 150,
+      step: 0.1,
+      cursor: 'grab',
+      startScale: 1,
+      setTransform: (el, { scale, x, y }) => {
+        el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      }
+    });
+
+    // Mouse wheel zoom
+    img.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel, { passive: false });
+
+    // Double-click toggle: 100% <-> fit-to-width
+    img.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      const container = img.parentElement;
+      const containerRect = container.getBoundingClientRect();
+      const widthFit = containerRect.width / img.naturalWidth;
+      const currentScale = panzoomInstance.getScale();
+      const EPSILON = 0.01;
+      if (Math.abs(currentScale - 1.0) > EPSILON && Math.abs(currentScale - widthFit) > EPSILON) {
+        panzoomInstance.zoomTo(0, 0, 1.0, { animate: true });
+      } else if (Math.abs(currentScale - 1.0) < EPSILON) {
+        panzoomInstance.zoomTo(0, 0, widthFit, { animate: true });
+      } else if (Math.abs(currentScale - widthFit) < EPSILON) {
+        panzoomInstance.zoomTo(0, 0, 1.0, { animate: true });
+      } else {
+        panzoomInstance.zoomTo(0, 0, 1.0, { animate: true });
+      }
+    });
+  }
+
+  // Patch ComicReader to setup Panzoom on every page
   const origDisplayPage = window.ComicReader.prototype.displayPage;
   window.ComicReader.prototype.displayPage = function(index) {
-    console.log('displayPage called with index:', index);
     origDisplayPage.call(this, index);
     setTimeout(() => {
-      zoom.applyZoom();
+      const img = this.pageContainer.querySelector('img');
+      if (img) setupPanzoom(img);
       ui.updateNavButtons();
     }, 10);
   };
@@ -537,6 +823,7 @@ function initializeApp() {
   eventHandlers.setupFileInput();
   eventHandlers.setupKeyboard();
   eventHandlers.setupMouseWheel();
+  eventHandlers.setupDoubleClick();
   eventHandlers.setupPanning();
 
   // Debug functions
@@ -547,7 +834,17 @@ function initializeApp() {
       return;
     }
     console.log('Force updating page counter...');
-    utils.resetEditingState();
     ui.updateNavButtons();
+  };
+  
+  // Test zoom functions
+  window.testZoom = () => {
+    console.log('Testing zoom functionality...');
+    console.log('Current zoom state:', state.zoomState);
+    console.log('Image element:', zoom.getImageEl());
+    if (zoom.getImageEl()) {
+      console.log('Image natural size:', zoom.getImageEl().naturalWidth, 'x', zoom.getImageEl().naturalHeight);
+    }
+    zoom.calculateFitLevels();
   };
 } 
