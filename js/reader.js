@@ -4,30 +4,71 @@
 class ComicReader {
   /**
    * @param {string[]} images - Array of image blob URLs
+   * @param {Object} [options] - Optional settings
+   * @param {boolean} [options.spreadMode] - If true, show two pages at a time (except first page)
+   * @param {boolean} [options.continuousScrollMode] - If true, enable continuous scroll mode
    */
-  constructor(images) {
+  constructor(images, options = {}) {
     if (!Array.isArray(images) || images.length === 0) {
       throw new Error('Invalid images array provided to ComicReader');
     }
-    
     this.images = images;
     this.currentPage = 0;
     this.pageContainer = document.getElementById('comicPage');
-    
     if (!this.pageContainer) {
       throw new Error('Comic page container not found');
     }
-    
+    this.spreadMode = !!options.spreadMode;
+    this.continuousScrollMode = !!options.continuousScrollMode;
+    this.zoom = 1.0;
     // Preload next image for better performance
     this.preloadQueue = new Set();
     this.preloadNextImage();
+  }
+
+  setSpreadMode(enabled) {
+    this.spreadMode = !!enabled;
+    // Re-render current page(s)
+    this.displayPage(this.currentPage);
+  }
+
+  isSpreadMode() {
+    return !!this.spreadMode;
+  }
+
+  setContinuousScrollMode(enabled) {
+    this.continuousScrollMode = !!enabled;
+    this.displayPage(0);
+  }
+
+  isContinuousScrollMode() {
+    return !!this.continuousScrollMode;
+  }
+
+  setZoom(zoom) {
+    this.zoom = zoom;
+    if (this.continuousScrollMode) {
+      // Apply zoom to all images
+      const imgs = this.pageContainer.querySelectorAll('img');
+      imgs.forEach(img => {
+        img.style.transform = `scale(${this.zoom})`;
+      });
+    } else {
+      // Single/spread mode: handled by zoom logic elsewhere
+    }
   }
 
   /**
    * Preload the next image for smoother navigation
    */
   preloadNextImage() {
-    const nextIndex = this.currentPage + 1;
+    if (this.continuousScrollMode) return; // No need in scroll mode
+    let nextIndex = this.currentPage + 1;
+    if (this.spreadMode && this.currentPage === 0) {
+      nextIndex = 1;
+    } else if (this.spreadMode) {
+      nextIndex = this.currentPage + 2;
+    }
     if (nextIndex < this.images.length && !this.preloadQueue.has(nextIndex)) {
       const img = new Image();
       img.src = this.images[nextIndex];
@@ -49,95 +90,209 @@ class ComicReader {
   }
 
   /**
-   * Display the page at the given index
+   * Display the page at the given index (handles all modes)
    * @param {number} index
    */
   displayPage(index) {
+    if (this.continuousScrollMode) {
+      this.currentPage = 0;
+      if (this.pageContainer) {
+        this.pageContainer.innerHTML = '';
+        this.pageContainer.classList.add('continuous-scroll');
+        this.pageContainer.style.overflowY = 'auto';
+        this.pageContainer.style.display = 'block';
+        this.pageContainer.style.height = '100vh';
+        this.pageContainer.style.width = '100vw';
+        this.pageContainer.style.padding = '0';
+        this.pageContainer.style.margin = '0';
+        this.pageContainer.style.background = 'none';
+        this.pageContainer.style.position = 'relative';
+        this.pageContainer.style.scrollBehavior = 'smooth';
+        this.images.forEach((src, i) => {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = `Page ${i + 1}`;
+          img.loading = 'eager';
+          img.style.display = 'block';
+          img.style.width = 'auto';
+          img.style.maxWidth = '100%';
+          img.style.margin = '0 auto 24px auto';
+          img.style.transform = `scale(${this.zoom})`;
+          img.onerror = () => {
+            img.alt = `Failed to load page ${i + 1}`;
+          };
+          this.pageContainer.appendChild(img);
+        });
+      }
+      return;
+    }
     if (index < 0 || index >= this.images.length) {
       console.warn(`Invalid page index: ${index}. Valid range: 0-${this.images.length - 1}`);
       return;
     }
-    
     this.currentPage = index;
-    
     if (this.pageContainer) {
-      // Clear existing content
+      this.pageContainer.classList.remove('continuous-scroll');
       this.pageContainer.innerHTML = '';
-      
-      // Create and configure image element
-      const img = document.createElement('img');
-      img.src = this.images[index];
-      img.alt = `Page ${index + 1}`;
-      img.loading = 'eager'; // Force immediate loading for current page
-      
-      // Add error handling for image loading
-      img.onerror = () => {
-        console.error(`Failed to load image at index ${index}`);
-        img.alt = `Failed to load page ${index + 1}`;
-      };
-      
-      img.onload = () => {
-        // Preload next image after current one loads
+      this.pageContainer.style.overflowY = '';
+      this.pageContainer.style.display = '';
+      this.pageContainer.style.height = '';
+      this.pageContainer.style.width = '';
+      this.pageContainer.style.padding = '';
+      this.pageContainer.style.margin = '';
+      this.pageContainer.style.background = '';
+      this.pageContainer.style.position = '';
+      this.pageContainer.style.scrollBehavior = '';
+      if (!this.spreadMode || index === 0) {
+        // Single page (first page or single mode)
+        const img = document.createElement('img');
+        img.src = this.images[index];
+        img.alt = `Page ${index + 1}`;
+        img.loading = 'eager';
+        img.onerror = () => {
+          img.alt = `Failed to load page ${index + 1}`;
+        };
+        img.onload = () => {
+          this.preloadNextImage();
+        };
+        this.pageContainer.appendChild(img);
+      } else {
+        // Spread mode: show two pages (index, index+1)
+        const img1 = document.createElement('img');
+        img1.src = this.images[index];
+        img1.alt = `Page ${index + 1}`;
+        img1.loading = 'eager';
+        img1.onerror = () => {
+          img1.alt = `Failed to load page ${index + 1}`;
+        };
+        this.pageContainer.appendChild(img1);
+        if (index + 1 < this.images.length) {
+          const img2 = document.createElement('img');
+          img2.src = this.images[index + 1];
+          img2.alt = `Page ${index + 2}`;
+          img2.loading = 'eager';
+          img2.onerror = () => {
+            img2.alt = `Failed to load page ${index + 2}`;
+          };
+          this.pageContainer.appendChild(img2);
+        }
         this.preloadNextImage();
-      };
-      
-      this.pageContainer.appendChild(img);
+      }
     }
-    
     // Page counter update is now handled by app.js updateNavButtons()
   }
 
   /**
-   * Get current page info
+   * Get current page info (adjusted for spread mode)
    * @returns {Object}
    */
   getPageInfo() {
-    return {
-      current: this.currentPage + 1,
-      total: this.images.length,
-      hasNext: this.currentPage < this.images.length - 1,
-      hasPrev: this.currentPage > 0
-    };
+    if (!this.spreadMode) {
+      return {
+        current: this.currentPage + 1,
+        total: this.images.length,
+        hasNext: this.currentPage < this.images.length - 1,
+        hasPrev: this.currentPage > 0
+      };
+    } else {
+      // Spread mode: first page is single, then spreads
+      if (this.currentPage === 0) {
+        return {
+          current: 1,
+          total: this.images.length,
+          hasNext: this.images.length > 1,
+          hasPrev: false
+        };
+      } else {
+        const spreadNum = Math.floor((this.currentPage - 1) / 2) + 2;
+        return {
+          current: spreadNum,
+          total: this.images.length,
+          hasNext: this.currentPage + 2 < this.images.length,
+          hasPrev: true
+        };
+      }
+    }
   }
 
   /**
-   * Navigate to next page
+   * Navigate to next page/spread
    * @returns {boolean} Success status
    */
   nextPage() {
-    if (this.currentPage < this.images.length - 1) {
-      this.displayPage(this.currentPage + 1);
-      return true;
+    if (!this.spreadMode) {
+      if (this.currentPage < this.images.length - 1) {
+        this.displayPage(this.currentPage + 1);
+        return true;
+      }
+      return false;
+    } else {
+      if (this.currentPage === 0 && this.images.length > 1) {
+        this.displayPage(1);
+        return true;
+      } else if (this.currentPage + 2 < this.images.length) {
+        this.displayPage(this.currentPage + 2);
+        return true;
+      } else if (this.currentPage + 1 < this.images.length) {
+        // Last spread is a single page (odd number of pages)
+        this.displayPage(this.currentPage + 1);
+        return true;
+      }
+      return false;
     }
-    return false;
   }
 
   /**
-   * Navigate to previous page
+   * Navigate to previous page/spread
    * @returns {boolean} Success status
    */
   prevPage() {
-    if (this.currentPage > 0) {
-      this.displayPage(this.currentPage - 1);
-      return true;
+    if (!this.spreadMode) {
+      if (this.currentPage > 0) {
+        this.displayPage(this.currentPage - 1);
+        return true;
+      }
+      return false;
+    } else {
+      if (this.currentPage === 1) {
+        this.displayPage(0);
+        return true;
+      } else if (this.currentPage > 1) {
+        this.displayPage(this.currentPage - 2);
+        return true;
+      }
+      return false;
     }
-    return false;
   }
 
   /**
-   * Jump to specific page
+   * Jump to specific page/spread
    * @param {number} page - 1-based page number
    * @returns {boolean} Success status
    */
   goToPage(page) {
-    const index = page - 1;
-    if (index >= 0 && index < this.images.length) {
-      this.displayPage(index);
-      return true;
+    if (!this.spreadMode) {
+      const index = page - 1;
+      if (index >= 0 && index < this.images.length) {
+        this.displayPage(index);
+        return true;
+      }
+      return false;
+    } else {
+      if (page === 1) {
+        this.displayPage(0);
+        return true;
+      } else {
+        // Spread N: index = 1 + (N-2)*2
+        const index = 1 + (page - 2) * 2;
+        if (index >= 1 && index < this.images.length) {
+          this.displayPage(index);
+          return true;
+        }
+        return false;
+      }
     }
-    return false;
   }
 }
-
 // Expose globally
 window.ComicReader = ComicReader; 

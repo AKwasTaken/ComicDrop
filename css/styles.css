@@ -155,23 +155,15 @@ main {
   align-items: center;
   justify-content: center;
   gap: 0.8rem;
-  /* More translucent background */
-  background: rgba(20, 20, 20, 0.45); /* was var(--bg-overlay) */
+  background: rgba(20, 20, 20, 0.45);
   border-radius: var(--border-radius-large);
   padding: 0.6rem 1rem;
   box-shadow: var(--shadow);
   z-index: 20;
-  opacity: 0;
+  opacity: 1; /* Always visible */
   transition: var(--transition-slow);
-  /* Stronger blur for frosted glass effect */
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.13);
-}
-
-.reader-container:hover .nav-controls,
-.nav-controls.editing {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 
 /* Navigation buttons */
@@ -442,4 +434,65 @@ main {
   margin-top: 0 !important;
   padding-top: 0 !important;
   display: block;
+} 
+
+/* Spread view toggle button */
+#spreadToggleBtn {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  font-size: 1.2rem;
+  border-radius: 50%;
+  width: 2.2rem;
+  height: 2.2rem;
+  cursor: pointer;
+  transition: var(--transition);
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1.2em;
+}
+#spreadToggleBtn.active {
+  background: var(--accent-color);
+  color: #fff;
+}
+#spreadToggleBtn:hover {
+  background: rgba(0, 184, 148, 0.12);
+  color: var(--accent-hover);
+}
+
+/* Spread mode: show two images side by side */
+.comic-page {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0; /* Remove space between pages */
+}
+.comic-page img {
+  max-width: 48vw;
+  max-height: 96vh;
+  width: auto;
+  height: auto;
+  margin: 0 !important; /* Remove any margin */
+} 
+
+.comic-page.continuous-scroll {
+  display: block !important;
+  overflow-y: auto;
+  height: 100vh;
+  width: 100vw;
+  padding: 0;
+  margin: 0;
+  background: none;
+  position: relative;
+  scroll-behavior: smooth;
+}
+.comic-page.continuous-scroll img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto 24px auto;
+  transform-origin: top center;
 } 

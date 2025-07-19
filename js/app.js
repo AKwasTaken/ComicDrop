@@ -9,7 +9,9 @@ function initializeApp() {
   // App state
   const state = {
     comicReader: null,
-    isEditingPage: false
+    isEditingPage: false,
+    spreadMode: false, // New: track spread mode
+    continuousScrollMode: false
   };
 
   // Minimal utils fallback if not already defined
@@ -125,6 +127,21 @@ function initializeApp() {
         <button id="firstPageBtn" title="First Page">⏮</button>
         <span id="pageCounter" title="Click to edit page number">1 / 1</span>
         <button id="lastPageBtn" title="Last Page">⏭</button>
+        <button id="spreadToggleBtn" title="Toggle two-page view" style="margin-left:1.2em;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+            <rect x="2" y="4" width="8" height="14" rx="2" fill="currentColor" fill-opacity="0.7"/>
+            <rect x="12" y="4" width="8" height="14" rx="2" fill="currentColor" fill-opacity="0.4"/>
+            <rect x="10.5" y="4" width="1" height="14" fill="currentColor" fill-opacity="0.7"/>
+          </svg>
+        </button>
+        <button id="scrollToggleBtn" title="Continuous scroll mode" style="margin-left:1.2em;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+            <rect x="4" y="2" width="14" height="18" rx="2" fill="currentColor" fill-opacity="0.5"/>
+            <rect x="7" y="5" width="8" height="2" rx="1" fill="#fff" fill-opacity="0.7"/>
+            <rect x="7" y="9" width="8" height="2" rx="1" fill="#fff" fill-opacity="0.7"/>
+            <rect x="7" y="13" width="8" height="2" rx="1" fill="#fff" fill-opacity="0.7"/>
+          </svg>
+        </button>
       `;
       this.attachNavListeners();
     },
@@ -134,13 +151,35 @@ function initializeApp() {
       const buttons = {
         firstPageBtn: document.getElementById('firstPageBtn'),
         lastPageBtn: document.getElementById('lastPageBtn'),
-        pageCounter: document.getElementById('pageCounter')
+        pageCounter: document.getElementById('pageCounter'),
+        spreadToggleBtn: document.getElementById('spreadToggleBtn'),
+        scrollToggleBtn: document.getElementById('scrollToggleBtn')
       };
       console.log('Found buttons:', buttons);
       const buttonHandlers = {
         firstPageBtn: () => navigation.goToFirstPage(),
         lastPageBtn: () => navigation.goToLastPage(),
-        pageCounter: () => this.startPageEdit()
+        pageCounter: () => this.startPageEdit(),
+        spreadToggleBtn: () => {
+          state.spreadMode = !state.spreadMode;
+          if (state.comicReader) {
+            state.comicReader.setSpreadMode(state.spreadMode);
+            state.comicReader.setContinuousScrollMode(false);
+            state.comicReader.displayPage(0);
+          }
+          state.continuousScrollMode = false;
+          this.renderNavControls();
+        },
+        scrollToggleBtn: () => {
+          state.continuousScrollMode = !state.continuousScrollMode;
+          if (state.comicReader) {
+            state.comicReader.setContinuousScrollMode(state.continuousScrollMode);
+            state.comicReader.setSpreadMode(false);
+            state.comicReader.displayPage(0);
+          }
+          state.spreadMode = false;
+          this.renderNavControls();
+        }
       };
       Object.entries(buttons).forEach(([key, button]) => {
         if (button) {
@@ -167,28 +206,40 @@ function initializeApp() {
       const buttons = {
         firstPageBtn: document.getElementById('firstPageBtn'),
         lastPageBtn: document.getElementById('lastPageBtn'),
-        pageCounter: document.getElementById('pageCounter')
+        pageCounter: document.getElementById('pageCounter'),
+        spreadToggleBtn: document.getElementById('spreadToggleBtn'),
+        scrollToggleBtn: document.getElementById('scrollToggleBtn')
       };
       if (!Object.values(buttons).every(btn => btn)) {
         console.error('Navigation buttons not found in updateNavButtons');
         return;
       }
-      const currentPage = state.comicReader.currentPage;
-      const totalPages = state.comicReader.images.length;
-      console.log('Updating nav buttons:', { currentPage, totalPages, isEditingPage: state.isEditingPage });
+      // Use getPageInfo for correct info in spread mode
+      const pageInfo = state.comicReader.getPageInfo();
       // Update button states
-      buttons.firstPageBtn.disabled = currentPage === 0;
-      buttons.lastPageBtn.disabled = currentPage === totalPages - 1;
+      buttons.firstPageBtn.disabled = !pageInfo.hasPrev;
+      buttons.lastPageBtn.disabled = !pageInfo.hasNext;
       // Update page counter when not editing
       if (!state.isEditingPage) {
         const existingInput = buttons.pageCounter.querySelector('input');
         if (existingInput) {
           existingInput.remove();
         }
-        buttons.pageCounter.textContent = `${currentPage + 1} / ${totalPages}`;
-        console.log('Updated page counter to:', buttons.pageCounter.textContent);
-      } else {
-        console.log('Skipping page counter update - currently editing');
+        // Show spread number in spread mode, else show page number
+        if (state.spreadMode) {
+          buttons.pageCounter.textContent = `${pageInfo.current} / ${Math.ceil(pageInfo.total === 1 ? 1 : 1 + (pageInfo.total - 1) / 2)}`;
+        } else {
+          buttons.pageCounter.textContent = `${pageInfo.current} / ${pageInfo.total}`;
+        }
+      }
+      // Update spread toggle button style
+      if (buttons.spreadToggleBtn) {
+        buttons.spreadToggleBtn.classList.toggle('active', state.spreadMode);
+        buttons.spreadToggleBtn.title = state.spreadMode ? 'Switch to single page view' : 'Switch to two-page view';
+      }
+      if (buttons.scrollToggleBtn) {
+        buttons.scrollToggleBtn.classList.toggle('active', state.continuousScrollMode);
+        buttons.scrollToggleBtn.title = state.continuousScrollMode ? 'Switch to paged view' : 'Switch to continuous scroll mode';
       }
     },
 
@@ -623,10 +674,19 @@ function initializeApp() {
           fileNameBar.textContent = window.currentFileName;
           fileNameBar.style.display = '';
         }
-        state.comicReader = new window.ComicReader(result.images);
+        state.comicReader = new window.ComicReader(result.images, { spreadMode: state.spreadMode, continuousScrollMode: state.continuousScrollMode });
+        window._comicReader = () => state.comicReader; // Ensure edge arrows work
         ui.showReader();
         state.comicReader.displayPage(0);
         ui.updateNavButtons();
+        // Hide nav controls and arrows in scroll mode
+        if (state.continuousScrollMode) {
+          if (elements.navControls) elements.navControls.style.display = 'none';
+          document.getElementById('edgeLeftArrow').style.display = 'none';
+          document.getElementById('edgeRightArrow').style.display = 'none';
+        } else {
+          if (elements.navControls) elements.navControls.style.display = '';
+        }
       } else {
         utils.showError('No images found in archive.');
       }
@@ -636,6 +696,18 @@ function initializeApp() {
       utils.hideProgress();
     }
   };
+
+  // Add zoom handling for continuous scroll mode
+  document.addEventListener('wheel', function(e) {
+    if (state.comicReader && state.comicReader.isContinuousScrollMode()) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        let newZoom = state.comicReader.zoom * (e.deltaY < 0 ? 1.08 : 0.92);
+        newZoom = Math.max(0.2, Math.min(5, newZoom));
+        state.comicReader.setZoom(newZoom);
+      }
+    }
+  }, { passive: false });
 
   // Restore eventHandlers for event setup
   const eventHandlers = {
