@@ -1,8 +1,32 @@
+/* CSS Custom Properties for easy theming */
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: rgba(255, 255, 255, 0.02);
+  --bg-overlay: rgba(0, 0, 0, 0.8);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --accent-color: #00b894;
+  --accent-hover: #00d4a3;
+  --error-color: #dc3545;
+  --border-radius: 12px;
+  --border-radius-large: 24px;
+  --transition: all 0.2s ease;
+  --transition-slow: all 0.3s ease;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-error: 0 8px 32px rgba(220, 53, 69, 0.3);
+  --backdrop-blur: blur(20px);
+}
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #0a0a0a;
-  color: #ffffff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   min-height: 100vh;
   height: 100vh;
   width: 100vw;
@@ -10,6 +34,8 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* Header styles */
 header {
   display: flex;
   align-items: center;
@@ -20,34 +46,40 @@ header {
   backdrop-filter: none;
   z-index: 10;
 }
+
 header[hidden] {
   display: none !important;
 }
+
 header h1 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--text-primary);
 }
+
 #settingsBtn {
   background: none;
   border: none;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.4rem;
   cursor: pointer;
   border-radius: 50%;
   width: 2.4rem;
   height: 2.4rem;
-  transition: all 0.2s ease;
+  transition: var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 #settingsBtn:hover {
   background: rgba(255, 255, 255, 0.1);
   transform: scale(1.05);
 }
+
+/* Main layout */
 main {
   flex: 1;
   display: flex;
@@ -59,35 +91,42 @@ main {
   height: 100%;
   width: 100vw;
 }
+
+/* Drop zone styles */
 .drop-zone {
   border: 2px dashed rgba(255, 255, 255, 0.3);
   padding: 4rem 2.5rem;
   text-align: center;
-  transition: all 0.3s ease;
+  transition: var(--transition-slow);
   margin: 0 auto;
   margin-top: 15vh;
   max-width: 480px;
   width: 100%;
   font-size: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-secondary);
   border-radius: 20px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--backdrop-blur);
 }
+
 .drop-zone.dragover {
-  border-color: #00b894;
+  border-color: var(--accent-color);
   background: rgba(0, 184, 148, 0.05);
   transform: scale(1.02);
 }
+
 .file-label {
-  color: #00b894;
+  color: var(--accent-color);
   cursor: pointer;
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease;
+  transition: color var(--transition);
 }
+
 .file-label:hover {
-  color: #00d4a3;
+  color: var(--accent-hover);
 }
+
+/* Progress styles */
 .progress-container {
   width: 100%;
   max-width: 480px;
@@ -96,19 +135,22 @@ main {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-secondary);
   border-radius: 16px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--backdrop-blur);
 }
+
 .progress-bar {
   height: 6px;
-  background: linear-gradient(90deg, #00b894 0%, #00d4a3 100%);
+  background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-hover) 100%);
   border-radius: 3px;
   width: 0%;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   flex: 1;
   box-shadow: 0 0 8px rgba(0, 184, 148, 0.3);
 }
+
+/* Reader container */
 .reader-container {
   display: flex;
   flex-direction: column;
@@ -122,6 +164,8 @@ main {
   background: none;
   box-shadow: none;
 }
+
+/* Navigation controls */
 .nav-controls {
   position: absolute;
   left: 50%;
@@ -131,31 +175,34 @@ main {
   align-items: center;
   justify-content: center;
   gap: 0.8rem;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 24px;
+  background: var(--bg-overlay);
+  border-radius: var(--border-radius-large);
   padding: 0.6rem 1rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow);
   z-index: 20;
   opacity: 0;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(20px);
+  transition: var(--transition-slow);
+  backdrop-filter: var(--backdrop-blur);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .reader-container:hover .nav-controls,
 .nav-controls.editing {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* Navigation buttons */
 .nav-controls button {
   background: none;
   border: none;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.2rem;
   border-radius: 50%;
   width: 2.2rem;
   height: 2.2rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
   outline: none;
   display: flex;
   align-items: center;
@@ -163,6 +210,7 @@ main {
   font-weight: 300;
   position: relative;
 }
+
 .nav-controls button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -170,43 +218,50 @@ main {
   color: rgba(255, 255, 255, 0.5);
   background: rgba(255, 255, 255, 0.05);
 }
+
 .nav-controls button:disabled:hover {
   opacity: 0.6;
   transform: scale(0.95);
   background: rgba(255, 255, 255, 0.08);
 }
+
 .nav-controls button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
-  color: #00b894;
+  color: var(--accent-color);
   transform: scale(1.1);
 }
+
+/* Page counter */
 #pageCounter {
   font-size: 0.9rem;
   min-width: 60px;
   text-align: center;
   font-weight: 400;
   background: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   border: none;
   margin: 0 0.5rem;
   letter-spacing: 0.02em;
   cursor: pointer;
   padding: 0.3rem 0.6rem;
-  border-radius: 12px;
-  transition: all 0.2s ease;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
   user-select: none;
 }
+
 #pageCounter:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #00b894;
+  color: var(--accent-color);
   transform: scale(1.05);
 }
+
+/* Page edit input */
 .page-edit-input {
   width: 40px !important;
   height: 20px !important;
   border: none !important;
   background: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
+  color: var(--text-primary) !important;
   text-align: center !important;
   border-radius: 6px !important;
   font-size: 0.9rem !important;
@@ -214,21 +269,26 @@ main {
   outline: none !important;
   margin: 0 2px !important;
   padding: 0 4px !important;
-  transition: all 0.2s ease !important;
+  transition: var(--transition) !important;
 }
+
 .page-edit-input:focus {
   background: rgba(0, 184, 148, 0.2) !important;
-  color: #00b894 !important;
+  color: var(--accent-color) !important;
   box-shadow: 0 0 0 1px rgba(0, 184, 148, 0.3) !important;
 }
+
 .page-edit-input::-webkit-inner-spin-button,
 .page-edit-input::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 .page-edit-input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* Comic page */
 .comic-page {
   flex: 1 1 0;
   min-height: 0;
@@ -245,6 +305,7 @@ main {
   margin: 0;
   position: relative;
 }
+
 .comic-page img {
   max-width: 100vw;
   max-height: 100vh;
@@ -253,26 +314,29 @@ main {
   border-radius: 0;
   box-shadow: none;
   background: transparent;
-  transition: all 0.2s ease;
+  transition: var(--transition);
   object-fit: contain;
   display: block;
   margin: 0 auto;
   cursor: grab;
   user-select: none;
 }
+
 .comic-page img:active {
   cursor: grabbing;
 }
+
+/* Error container */
 .error-container {
   position: fixed;
   bottom: 2.5rem;
   left: 50%;
   transform: translateX(-50%);
-  background: #dc3545;
-  color: #ffffff;
+  background: var(--error-color);
+  color: var(--text-primary);
   padding: 0.8rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(220, 53, 69, 0.3);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-error);
   z-index: 1000;
   font-size: 0.9rem;
   display: flex;
@@ -280,38 +344,63 @@ main {
   gap: 0.5rem;
   font-weight: 500;
   opacity: 0.98;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--backdrop-blur);
 }
+
+/* Responsive design */
 @media (max-width: 700px) {
   .drop-zone, .progress-container {
     max-width: 95vw;
     padding: 2rem 1rem;
   }
+  
   .reader-container {
     max-width: 100vw;
     padding: 0;
     height: 100vh;
   }
+  
   .comic-page {
     max-width: 100vw;
     max-height: 100vh;
   }
+  
   .nav-controls {
     bottom: 2vh;
     padding: 0.5rem 0.8rem;
     gap: 0.6rem;
   }
+  
   .nav-controls button {
     width: 2rem;
     height: 2rem;
     font-size: 1rem;
   }
+  
   #pageCounter {
     font-size: 0.8rem;
     min-width: 50px;
   }
+  
   .page-edit-input {
     width: 35px !important;
     font-size: 0.8rem !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .nav-controls,
+  .drop-zone,
+  .progress-container,
+  .error-container {
+    display: none !important;
+  }
+  
+  .comic-page img {
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    height: auto;
   }
 } 
