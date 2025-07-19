@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', function() {
   leftArrow.style.cursor = 'pointer';
   leftArrow.style.opacity = '0.8';
   leftArrow.style.display = 'none';
-  leftArrow.style.width = '40px';
-  leftArrow.style.height = '40px';
+  leftArrow.style.width = '64px';
+  leftArrow.style.height = '64px';
 
   const rightArrow = document.createElement('button');
   rightArrow.id = 'edgeRightArrow';
@@ -37,11 +37,17 @@ document.addEventListener('DOMContentLoaded', function() {
   rightArrow.style.cursor = 'pointer';
   rightArrow.style.opacity = '0.8';
   rightArrow.style.display = 'none';
-  rightArrow.style.width = '40px';
-  rightArrow.style.height = '40px';
+  rightArrow.style.width = '64px';
+  rightArrow.style.height = '64px';
 
   document.body.appendChild(leftArrow);
   document.body.appendChild(rightArrow);
+
+  // 1. Increase the size of the edge navigation arrows
+  leftArrow.querySelector('svg').setAttribute('width', '48');
+  leftArrow.querySelector('svg').setAttribute('height', '48');
+  rightArrow.querySelector('svg').setAttribute('width', '48');
+  rightArrow.querySelector('svg').setAttribute('height', '48');
 
   // Navigation logic for arrows
   leftArrow.addEventListener('click', function(e) {
@@ -81,6 +87,10 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       showArrows();
     }
+    // Hide/show fileNameBar
+    if (document.getElementById('fileNameBar')) {
+      document.getElementById('fileNameBar').style.display = hidden ? 'none' : 'block';
+    }
   }
 
   // Tap/click anywhere on the reader container toggles UI
@@ -96,6 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const origShowReader = ui.showReader.bind(ui);
   ui.showReader = function() {
     origShowReader();
+    fileNameBar.textContent = window.currentFileName || '';
+    fileNameBar.style.display = uiHidden ? 'none' : 'block';
     showArrows();
     setUIHidden(false);
   };
@@ -104,6 +116,32 @@ document.addEventListener('DOMContentLoaded', function() {
     origResetUI();
     hideArrows();
     setUIHidden(false);
+  };
+
+  // 3. Add file name display at the top, which hides with UI
+  const fileNameBar = document.createElement('div');
+  fileNameBar.id = 'fileNameBar';
+  fileNameBar.style.position = 'fixed';
+  fileNameBar.style.top = '0';
+  fileNameBar.style.left = '0';
+  fileNameBar.style.right = '0';
+  fileNameBar.style.zIndex = '1002';
+  fileNameBar.style.background = 'rgba(0,0,0,0.7)';
+  fileNameBar.style.color = '#fff';
+  fileNameBar.style.fontSize = '1.3em';
+  fileNameBar.style.fontWeight = '600';
+  fileNameBar.style.textAlign = 'center';
+  fileNameBar.style.padding = '12px 0 8px 0';
+  fileNameBar.style.display = 'none';
+  document.body.appendChild(fileNameBar);
+
+  // Remove previous fileHandler.processFile override for fileNameBar
+  // Instead, set the file name globally and update in ui.showReader
+  window.currentFileName = '';
+  const origProcessFile = fileHandler.processFile;
+  fileHandler.processFile = async function(file) {
+    window.currentFileName = file.name || '';
+    return await origProcessFile.apply(this, arguments);
   };
 });
 
@@ -214,11 +252,10 @@ function initializeApp() {
         return;
       }
       
+      // 2. Remove next/prev page arrows from the middle nav bar
       elements.navControls.innerHTML = `
         <button id="firstPageBtn" title="First Page">⏮</button>
-        <button id="prevPageBtn" title="Previous Page">⟨</button>
         <span id="pageCounter" title="Click to edit page number">1 / 1</span>
-        <button id="nextPageBtn" title="Next Page">⟩</button>
         <button id="lastPageBtn" title="Last Page">⏭</button>
       `;
       
