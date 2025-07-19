@@ -19,9 +19,9 @@ function validateFile(file) {
   }
   
   // Check file size (optional - can be removed if not needed)
-  const maxSize = 500 * 1024 * 1024; // 500MB
+  const maxSize = 1024 * 1024 * 1024; // 500MB
   if (file.size > maxSize) {
-    throw new Error('File too large. Maximum size is 500MB.');
+    throw new Error('File too large. Maximum size is 1GB.');
   }
 }
 
