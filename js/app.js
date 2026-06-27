@@ -11,7 +11,6 @@ function initializeApp() {
   const elements = {
     dropZone: document.getElementById("dropZone"),
     readerContainer: document.getElementById("readerContainer"),
-    siteHeader: document.getElementById("siteHeader"),
     navControls: document.getElementById("navControls"),
     fileInput: document.getElementById("fileInput"),
     leftArrow: document.getElementById("edgeLeftArrow"),
