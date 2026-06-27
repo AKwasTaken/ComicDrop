@@ -1,49 +1,86 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ComicDrop</title>
-  <link rel="icon" href="icon.png">
-  <link rel="stylesheet" href="css/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-</head>
-<body>
-  <main>
-    <div class="drop-zone-outer">
-      <div id="dropZone" class="drop-zone">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ComicDrop</title>
+
+    <link rel="preload" href="/fonts/Outfit/Outfit-VariableFont_wght.woff2" crossorigin="anonymous" as="font" type="font/woff2" />
+    <link rel="preload" href="/assets/grid-long.jpg" crossorigin="anonymous" as="image" type="image/jpeg" />
+
+
+    <link rel="icon" href="assets/icon.svg" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main>
+      <section class="top-heading">
         <span class="drop-icon">
-          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="14" width="16" height="28" rx="4" fill="#00b894" fill-opacity="0.18"/>
-            <rect x="32" y="14" width="16" height="28" rx="4" fill="#00b894" fill-opacity="0.12"/>
-            <rect x="27" y="14" width="2" height="28" fill="#00b894" fill-opacity="0.28"/>
-            <rect x="14" y="22" width="28" height="12" rx="2" fill="#00b894" fill-opacity="0.22"/>
-          </svg>
+          <img src="assets/icon.svg" alt="ComicDrop Icon" width="64" height="64" />
         </span>
-        <h1>ComicDrop<br></h1>
-        <p>Drag & drop your CBR/CBZ file here to read it<br>or</p>
-        <label for="fileInput" class="file-label">Choose a file</label>
-        <input type="file" id="fileInput" accept=".cbz,.cbr,.cb7,.zip,.rar,.7z" style="display:none">
+        <h1>ComicDrop</h1>
+        <p class="tagline">
+          A lightning-fast, private web reader for your digital comic books
+        </p>
+      </section>
+
+      <div id="dropZone" class="drop-zone">
+        <div class="drop-action-area">
+          <p>
+            Drop your CBR, CBZ, or CB7 archives right here to start reading
+          </p>
+          <div class="separator">or</div>
+          <label for="fileInput" class="file-label">Choose a file</label>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".cbz,.cbr,.cb7,.zip,.rar,.7z"
+            style="display: none"
+          />
+        </div>
       </div>
-    </div>
-    <div id="progressContainer" class="progress-container" style="display:none;">
-      <div id="progressBar" class="progress-bar"></div>
-      <span id="progressText"></span>
-    </div>
-    <div id="readerContainer" class="reader-container" style="display:none;">
-      <div id="navControls" class="nav-controls"></div>
-      <div id="comicPage" class="comic-page"></div>
-      <div id="zoomIndicator" class="zoom-indicator"></div>
-    </div>
-    <noscript><div class="error-container">JavaScript is required to use this app.</div></noscript>
-    <div id="jszipMissing" class="error-container" style="display:none;">JSZip library not loaded. Please add <code>jszip.min.js</code> to <code>lib/</code> folder.</div>
-  </main>
-  <div id="errorContainer" class="error-container" style="display:none;"></div>
-  <script src="lib/unarchiver.min.js"></script>
-  <script src="lib/jszip.min.js" defer></script>
-  <script src="js/utils.js" defer></script>
-  <script src="js/fileHandler.js" defer></script>
-  <script src="js/reader.js" defer></script>
-  <script src="js/app.js" defer></script>
-</body>
-</html> 
+
+      <div
+        id="progressContainer"
+        class="progress-container"
+        style="display: none"
+      >
+        <div id="progressBar" class="progress-bar"></div>
+        <span id="progressText"></span>
+      </div>
+
+      <div id="readerContainer" class="reader-container" style="display: none">
+        <div id="navControls" class="nav-controls"></div>
+        <div id="comicPage" class="comic-page"></div>
+        <div id="zoomIndicator" class="zoom-indicator"></div>
+      </div>
+
+      <noscript
+        ><div class="error-container">
+          JavaScript is required to use this app.
+        </div></noscript
+      >
+      <div id="jszipMissing" class="error-container" style="display: none">
+        JSZip library not loaded. Please add <code>jszip.min.js</code> to
+        <code>lib/</code> folder.
+      </div>
+    </main>
+
+    <div
+      id="errorContainer"
+      class="error-container"
+      style="display: none"
+    ></div>
+
+    <script src="lib/unarchiver.min.js"></script>
+    <script src="lib/jszip.min.js" defer></script>
+    <script src="js/utils.js" defer></script>
+    <script src="js/fileHandler.js" defer></script>
+    <script src="js/reader.js" defer></script>
+    <script src="js/app.js" defer></script>
+  </body>
+</html>
