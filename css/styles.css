@@ -87,7 +87,7 @@ header[hidden] {
 body::before {
   content: "";
   position: fixed;
-  left: 55%;
+  left: 50%;
   top: 0;
   width: 100vw;
   height: 30000px; 
