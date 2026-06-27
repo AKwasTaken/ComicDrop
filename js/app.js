@@ -99,17 +99,17 @@ function initializeApp() {
       
       elements.navControls.innerHTML = `
         <button id="firstPageBtn" title="First Page">
-          <img src="../assets/icons/first.svg" alt="First Page" width="18" height="18" style="pointer-events: none;" />
+          <img src="assets/icons/first.svg" alt="First Page" width="18" height="18" style="pointer-events: none;" />
         </button>
         <button id="prevPageBtn" title="Previous Page">
-          <img src="../assets/icons/prev.svg" alt="Previous Page" width="18" height="18" style="pointer-events: none;" />
+          <img src="assets/icons/prev.svg" alt="Previous Page" width="18" height="18" style="pointer-events: none;" />
         </button>
         <span id="pageCounter" title="Click to edit page number">1 / 1</span>
         <button id="nextPageBtn" title="Next Page">
-          <img src="../assets/icons/next.svg" alt="Next Page" width="18" height="18" style="pointer-events: none;" />
+          <img src="assets/icons/next.svg" alt="Next Page" width="18" height="18" style="pointer-events: none;" />
         </button>
         <button id="lastPageBtn" title="Last Page">
-          <img src="../assets/icons/last.svg" alt="Last Page" width="18" height="18" style="pointer-events: none;" />
+          <img src="assets/icons/last.svg" alt="Last Page" width="18" height="18" style="pointer-events: none;" />
         </button>
       `;
       this.attachNavListeners();
