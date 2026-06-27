@@ -5,9 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ComicDrop</title>
 
-    <link rel="preload" href="/fonts/Outfit/Outfit-VariableFont_wght.woff2" crossorigin="anonymous" as="font" type="font/woff2" />
-    <link rel="preload" href="/assets/grid-long.jpg" crossorigin="anonymous" as="image" type="image/jpeg" />
-
+    <link
+      rel="preload"
+      href="/fonts/Outfit/Outfit-VariableFont_wght.woff2"
+      crossorigin="anonymous"
+      as="font"
+      type="font/woff2"
+    />
+    <link
+      rel="preload"
+      href="/assets/grid-long.jpg"
+      crossorigin="anonymous"
+      as="image"
+      type="image/jpeg"
+    />
 
     <link rel="icon" href="assets/icon.svg" />
     <link rel="stylesheet" href="css/styles.css" />
@@ -20,7 +31,12 @@
     <main>
       <section class="top-heading">
         <span class="drop-icon">
-          <img src="assets/icon.svg" alt="ComicDrop Icon" width="64" height="64" />
+          <img
+            src="assets/icon.svg"
+            alt="ComicDrop Icon"
+            width="64"
+            height="64"
+          />
         </span>
         <h1>ComicDrop</h1>
         <p class="tagline">
@@ -30,9 +46,7 @@
 
       <div id="dropZone" class="drop-zone">
         <div class="drop-action-area">
-          <p>
-            Drop your CBR, CBZ, or CB7 archives right here to start reading
-          </p>
+          <p>Drop your CBR, CBZ, or CB7 archives right here to start reading</p>
           <div class="separator">or</div>
           <label for="fileInput" class="file-label">Choose a file</label>
           <input
@@ -55,7 +69,12 @@
 
       <div id="readerContainer" class="reader-container" style="display: none">
         <div id="navControls" class="nav-controls"></div>
-        <div id="comicPage" class="comic-page"></div>
+        
+        <div id="comicPage" class="comic-page">
+          <img id="pageCanvasA" class="canvas-layer active" src="" alt="Comic Page" />
+          <img id="pageCanvasB" class="canvas-layer hidden" src="" alt="Comic Page" />
+        </div>
+        
         <div id="zoomIndicator" class="zoom-indicator"></div>
       </div>
 

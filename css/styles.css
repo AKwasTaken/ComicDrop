@@ -39,40 +39,68 @@
 }
 
 
+/* --- Active Reader State Overrides --- */
+
+/* 1. Turns off the background image asset and halts the animation immediately */
+body.comic-active::before {
+  background-image: none !important;
+  animation: none !important;
+  display: none;
+}
+
+/* 2. Safety override: Ensure the header elements completely clear out of the layout */
+body.comic-active .top-heading {
+  display: none !important;
+}
+
+/* 3. Forces the main container to match full dimensional height constraints */
+body.comic-active main {
+  min-height: 100vh;
+  height: 100vh;
+  padding: 0;
+}
+
+
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
-  z-index: -1; /* Pushes the background behind everything else */
   
-  /* Background image setup */
+  /* 1. Center the box horizontally and let it fill the viewport */
+  left: 50%;
+  top: 0;
+  width: 100vw;
+  height: 30000px; /* Match or exceed the height of your long asset */
+  
+  /* 2. Hardware acceleration hooks + initial horizontal center alignment */
+  transform: translateX(-50%) translateY(0) translateZ(0);
+  will-change: transform; 
+  z-index: -1;
+  
   background-image: url('/assets/grid-long.jpg');
-  background-repeat: repeat-y; /* Repeats vertically for a seamless loop */
-  background-position: 0 0;
-  background-size: 100% auto; /* Matches the height of the screen while preserving aspect ratio */
+  background-repeat: repeat;
+  background-position: center top;
   
-  /* Link to the loop animation keyframe below */
-  animation: scrollBackground 30s linear infinite;
+  /* 3. YOUR SIZING FIX: Keeps aspect ratio completely locked, no stretching */
+  background-size: auto contain; 
   
-  /* Optional visual styling to blend with your dark theme */
-  opacity: 0.10; /* Lower opacity keeps it subtle so text remains readable */
-  pointer-events: none; /* Mouse clicks pass right through it */
+  /* 4. Smooth GPU movement */
+  animation: scrollBackground 120s linear infinite;
+  opacity: 0.05; 
+  pointer-events: none; 
 }
 
 @keyframes scrollBackground {
   from {
-    background-position: 0 0;
+    transform: translateX(-50%) translateY(0) translateZ(0);
   }
   to {
-    /* Animates backward vertically; a negative value scrolls top-to-bottom */
-    background-position:  0 -3000px; 
+    /* 5. Shifts the actual layer up smoothly on the GPU thread */
+    transform: translateX(-50%) translateY(-28244px) translateZ(0); 
   }
 }
 
-
-
-
 body {
+  position: relative;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: var(--bg-primary);
@@ -181,6 +209,13 @@ main {
   letter-spacing: 0.01em;
 }
 
+body.comic-active #dropZone {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .file-label {
   display: inline-block;
   background: var(--accent-color);
@@ -239,8 +274,11 @@ main {
   padding: 0;
   flex: 1 1 0;
   min-height: 0;
-  background: none;
-  box-shadow: none;
+  
+  /* --- The Transparency Fix --- */
+  background: var(--bg-primary) !important; /* Forces a solid background color */
+  z-index: 2;                               /* Layers it safely on top of the drop zone elements */
+  position: relative;
 }
 
 /* Navigation controls */
@@ -360,20 +398,13 @@ main {
   -moz-appearance: textfield;
 }
 
-/* Comic page */
 .comic-page {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  overflow: hidden; /* Prevent unwanted scrollbars during panning */
-  margin: 0 !important;
-  padding: 0 !important;
+  background: var(--bg-primary);
 }
 
 .comic-page img {
@@ -567,4 +598,72 @@ main {
   max-height: 100vh !important;
   width: auto !important;
   height: auto !important;
+}
+
+/* --- Seamless Transition Buffer Layers --- */
+
+.page-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* Constrain images within their respective buffer wrappers */
+.page-stage img {
+  max-width: 100vw;
+  max-height: 100vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Ensure spread layout limits remain applied inside staging wrappers */
+body.comic-active .page-stage img {
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+body.comic-active .spread-view-wrapper {
+  display: none !important; /* Cleans up old selector references if present */
+}
+
+/* Adjust spread mode inner limits directly via stage layout descriptors */
+.page-stage[style*="display: flex"] img {
+  max-width: calc(50vw - 4px) !important;
+  max-height: 100vh !important;
+}
+
+
+
+/* Base style for both permanent canvases */
+.canvas-layer {
+  position: absolute;
+  inset: 0;
+  max-width: 100vw;
+  max-height: 100vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: auto;
+  display: block;
+  will-change: opacity;
+  transition: opacity 0.1s ease-in-out; /* Super snappy transition */
+}
+
+/* Visibility triggers controlled by JS toggling */
+.canvas-layer.active {
+  opacity: 1;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+.canvas-layer.hidden {
+  opacity: 0;
+  z-index: 3;
+  pointer-events: none;
 }

@@ -23,13 +23,18 @@ function initializeApp() {
 
   window.ui = {
     showReader() {
+      // 1. Add active class to body to clear background grid and hide landing layout
+      document.body.classList.add('comic-active');
+
       const landingPage = document.getElementById('landingPage');
       if (landingPage) landingPage.style.display = 'none';
+      
+      // Select and hide the top header section explicitly
+      const topHeading = document.querySelector('.top-heading');
+      if (topHeading) topHeading.style.display = 'none';
+
       if (elements.readerContainer) elements.readerContainer.style.display = 'flex';
       
-      if (elements.siteHeader) {
-        Array.from(elements.siteHeader.children).forEach(el => el.style.display = 'none');
-      }
       if (elements.fileNameBar) {
         elements.fileNameBar.style.display = 'block';
         elements.fileNameBar.textContent = window.currentFileName || '';
@@ -42,13 +47,17 @@ function initializeApp() {
     },
 
     resetUI() {
+      // 2. Remove active class to restore background image and landing text
+      document.body.classList.remove('comic-active');
+
       const landingPage = document.getElementById('landingPage');
-      if (landingPage) landingPage.style.display = 'flex'; // Brings back the landing page
-      if (elements.readerContainer) elements.readerContainer.style.display = 'none';
+      if (landingPage) landingPage.style.display = 'flex';
       
-      if (elements.siteHeader) {
-        Array.from(elements.siteHeader.children).forEach(el => el.style.display = '');
-      }
+      // Restore the top heading view
+      const topHeading = document.querySelector('.top-heading');
+      if (topHeading) topHeading.style.display = 'block';
+
+      if (elements.readerContainer) elements.readerContainer.style.display = 'none';
       if (elements.fileNameBar) elements.fileNameBar.style.display = 'none';
       if (elements.leftArrow) elements.leftArrow.style.display = 'none';
       if (elements.rightArrow) elements.rightArrow.style.display = 'none';

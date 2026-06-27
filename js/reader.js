@@ -22,7 +22,6 @@ class ComicReader {
     if (this.blobCache.has(index)) {
       return this.blobCache.get(index);
     }
-    // Lazy on-demand asset loading
     try {
       const fileBlob = await this.entries[index].extract();
       const objectUrl = URL.createObjectURL(fileBlob);
@@ -60,47 +59,45 @@ class ComicReader {
   async displayPage(index) {
     if (index < 0 || index >= this.entries.length) return;
     this.currentPage = index;
-    this.pageContainer.innerHTML = '';
 
+    // Flush old out-of-bounds page segments from RAM
     this.manageMemoryBuffer(index);
 
-    const renderImage = async (imgIndex, placementTarget) => {
-      const srcUrl = await this.getPageUrl(imgIndex);
-      if (!srcUrl) return;
+    // 1. Identify which canvas is visible right now, and which one is resting
+    const canvasA = document.getElementById('pageCanvasA');
+    const canvasB = document.getElementById('pageCanvasB');
+    if (!canvasA || !canvasB) return;
 
-      const img = document.createElement('img');
-      img.src = srcUrl;
-      img.alt = `Page ${imgIndex + 1}`;
-      img.loading = 'eager';
-      
-      img.onload = () => {
-        if (typeof window.setupZoomHandlers === 'function') {
-          window.setupZoomHandlers(img, true);
-        }
-        this.preloadNextSegments(imgIndex);
-      };
+    const activeCanvas = canvasA.classList.contains('active') ? canvasA : canvasB;
+    const hiddenCanvas = activeCanvas === canvasA ? canvasB : canvasA;
 
-      placementTarget.appendChild(img);
-    };
+    // 2. Fetch the incoming image asset string
+    const srcUrl = await this.getPageUrl(index);
+    if (!srcUrl) return;
 
-    if (!this.spreadMode || index === 0) {
-      await renderImage(index, this.pageContainer);
-    } else {
-      const spreadWrapper = document.createElement('div');
-      spreadWrapper.className = 'spread-view-wrapper';
-      spreadWrapper.style.display = 'flex';
-      spreadWrapper.style.gap = '10px';
-      this.pageContainer.appendChild(spreadWrapper);
+    // 3. Update the invisible canvas background buffer source
+    hiddenCanvas.src = srcUrl;
+    hiddenCanvas.alt = `Page ${index + 1}`;
 
-      await renderImage(index, spreadWrapper);
-      if (index + 1 < this.entries.length) {
-        await renderImage(index + 1, spreadWrapper);
+    hiddenCanvas.onload = () => {
+      if (typeof window.setupZoomHandlers === 'function') {
+        window.setupZoomHandlers(hiddenCanvas, true);
       }
-    }
+      this.preloadNextSegments(index);
 
-    if (window.ui && typeof window.ui.updateNavButtons === 'function') {
-      window.ui.updateNavButtons();
-    }
+      // 4. THE MAGIC MOMENT: Swap classes instantly. 
+      // The old page stays completely visible until this exact microsecond.
+      activeCanvas.classList.remove('active');
+      activeCanvas.classList.add('hidden');
+
+      hiddenCanvas.classList.remove('hidden');
+      hiddenCanvas.classList.add('active');
+
+      // Update control bars layout trackers
+      if (window.ui && typeof window.ui.updateNavButtons === 'function') {
+        window.ui.updateNavButtons();
+      }
+    };
   }
 
   getPageInfo() {
