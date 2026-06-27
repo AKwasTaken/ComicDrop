@@ -86,7 +86,7 @@ header[hidden] {
    ========================================================================== */
 
 /* Only inject, process, and animate the background asset on desktops/large tablets */
-@media (min-width: 800px) {
+/* @media (min-width: 800px) {
   body::before {
     content: "";
     position: fixed;
@@ -114,7 +114,7 @@ header[hidden] {
   to {
     transform: translateX(-50%) translateY(-28244px) translateZ(0); 
   }
-}
+} */
 
 /* ==========================================================================
    4. DASHBOARD TEXT STYLING BLOCK
@@ -242,6 +242,21 @@ p {
   box-shadow: 0 0 8px rgba(0, 184, 148, 0.3);
 }
 
+.nav-controls button img {
+  display: block;
+  opacity: 0.9;
+  transition: transform 0.2s;
+}
+
+.nav-controls button:hover:not(:disabled) img {
+  filter: drop-shadow(0 0 4px rgba(0, 184, 148, 0.4));
+}
+
+.nav-controls button:disabled img {
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
 /* ==========================================================================
    7. CORE WORKING CANVAS WORKSPACE (READER LAYER)
    ========================================================================== */
@@ -272,6 +287,9 @@ p {
   height: 100vh;
   z-index: 1;
   background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .comic-page img {
@@ -281,16 +299,11 @@ p {
   height: auto;
   object-fit: contain; 
   display: block;
-  margin: 0 auto;
+  margin: auto !important; 
   cursor: grab;
   user-select: none;
   transform-origin: center center;
   will-change: transform;
-}
-
-.comic-page img {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
 }
 
 .comic-page img:active {
@@ -487,7 +500,8 @@ p {
 /* --- Live Input Tracking Fields --- */
 #pageCounter {
   font-size: 0.9rem;
-  min-width: 60px;
+  min-width: 70px;
+  white-space: nowrap;
   text-align: center;
   font-weight: 400;
   background: none;
@@ -642,8 +656,9 @@ body.comic-active .page-stage img {
   }
   
   #pageCounter {
-    font-size: 0.8rem;
-    min-width: 50px;
+    font-size: 0.9rem;
+    min-width: 70px;
+    white-space: nowrap;
   }
   
   .page-edit-input {

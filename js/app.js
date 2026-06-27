@@ -20,6 +20,33 @@ function initializeApp() {
     systemControls: document.getElementById("systemControls")
   };
 
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const swipeThreshold = 60;
+
+  if (elements.readerContainer) {
+    elements.readerContainer.addEventListener('touchstart', (e) => {
+      const activeImg = elements.readerContainer.querySelector('.canvas-layer.active');
+      if (activeImg && activeImg._zoomScale > 1.05) return;
+      
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    elements.readerContainer.addEventListener('touchend', (e) => {
+      const activeImg = elements.readerContainer.querySelector('.canvas-layer.active');
+      if (activeImg && activeImg._zoomScale > 1.05) return;
+
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipeGesture();
+    }, { passive: true });
+  }
+
+  function handleSwipeGesture() {
+    const deltaX = touchEndX - touchStartX;
+    if (deltaX < -swipeThreshold) navigation.goToNextPage();
+    if (deltaX > swipeThreshold) navigation.goToPrevPage();
+  }
+
   window.ui = {
     showReader() {
       document.body.classList.add("comic-active");
@@ -36,7 +63,6 @@ function initializeApp() {
       if (elements.leftArrow) elements.leftArrow.style.display = "block";
       if (elements.rightArrow) elements.rightArrow.style.display = "block";
       
-      // Reveal the new combined system controls top capsule
       if (elements.systemControls) 
         elements.systemControls.style.display = "inline-flex";
 
@@ -46,7 +72,6 @@ function initializeApp() {
     resetUI() {
       document.body.classList.remove("comic-active");
 
-      // Clear hidden animation positioning states
       if (elements.navControls)
         elements.navControls.classList.remove("nav-hidden");
       if (elements.systemControls)
@@ -71,12 +96,21 @@ function initializeApp() {
 
     renderNavControls() {
       if (!elements.navControls) return;
+      
       elements.navControls.innerHTML = `
-        <button id="firstPageBtn" title="First Page">⏮</button>
-        <button id="prevPageBtn" title="Previous Page">◀</button>
+        <button id="firstPageBtn" title="First Page">
+          <img src="../assets/icons/first.svg" alt="First Page" width="18" height="18" style="pointer-events: none;" />
+        </button>
+        <button id="prevPageBtn" title="Previous Page">
+          <img src="../assets/icons/prev.svg" alt="Previous Page" width="18" height="18" style="pointer-events: none;" />
+        </button>
         <span id="pageCounter" title="Click to edit page number">1 / 1</span>
-        <button id="nextPageBtn" title="Next Page">▶</button>
-        <button id="lastPageBtn" title="Last Page">⏭</button>
+        <button id="nextPageBtn" title="Next Page">
+          <img src="../assets/icons/next.svg" alt="Next Page" width="18" height="18" style="pointer-events: none;" />
+        </button>
+        <button id="lastPageBtn" title="Last Page">
+          <img src="../assets/icons/last.svg" alt="Last Page" width="18" height="18" style="pointer-events: none;" />
+        </button>
       `;
       this.attachNavListeners();
     },
@@ -90,16 +124,11 @@ function initializeApp() {
         lastPageBtn: document.getElementById("lastPageBtn"),
       };
 
-      if (targets.firstPageBtn)
-        targets.firstPageBtn.onclick = () => navigation.goToFirstPage();
-      if (targets.prevPageBtn)
-        targets.prevPageBtn.onclick = () => navigation.goToPrevPage();
-      if (targets.pageCounter)
-        targets.pageCounter.onclick = () => this.startPageEdit();
-      if (targets.nextPageBtn)
-        targets.nextPageBtn.onclick = () => navigation.goToNextPage();
-      if (targets.lastPageBtn)
-        targets.lastPageBtn.onclick = () => navigation.goToLastPage();
+      if (targets.firstPageBtn) targets.firstPageBtn.onclick = () => navigation.goToFirstPage();
+      if (targets.prevPageBtn) targets.prevPageBtn.onclick = () => navigation.goToPrevPage();
+      if (targets.pageCounter) targets.pageCounter.onclick = () => this.startPageEdit();
+      if (targets.nextPageBtn) targets.nextPageBtn.onclick = () => navigation.goToNextPage();
+      if (targets.lastPageBtn) targets.lastPageBtn.onclick = () => navigation.goToLastPage();
 
       this.updateNavButtons();
     },
@@ -114,8 +143,7 @@ function initializeApp() {
         lastPageBtn: document.getElementById("lastPageBtn"),
       };
 
-      if (!buttons.firstPageBtn || !buttons.lastPageBtn || !buttons.pageCounter)
-        return;
+      if (!buttons.firstPageBtn || !buttons.lastPageBtn || !buttons.pageCounter) return;
 
       const pageInfo = state.comicReader.getPageInfo();
 
@@ -173,72 +201,82 @@ function initializeApp() {
   };
 
   const navigation = {
-    goToFirstPage() {
-      if (state.comicReader) state.comicReader.displayPage(0);
-    },
-    goToLastPage() {
-      if (state.comicReader)
-        state.comicReader.displayPage(state.comicReader.entries.length - 1);
-    },
-    goToPrevPage() {
-      if (state.comicReader) state.comicReader.prevPage();
-    },
-    goToNextPage() {
-      if (state.comicReader) state.comicReader.nextPage();
-    },
+    goToFirstPage() { if (state.comicReader) state.comicReader.displayPage(0); },
+    goToLastPage() { if (state.comicReader) state.comicReader.displayPage(state.comicReader.entries.length - 1); },
+    goToPrevPage() { if (state.comicReader) state.comicReader.prevPage(); },
+    goToNextPage() { if (state.comicReader) state.comicReader.nextPage(); },
   };
 
   window.setupZoomHandlers = function (img, shouldReset) {
-    img._zoomScale = 1.0;
-    img._panOffset = { x: 0, y: 0 };
+    if (shouldReset || img._zoomScale === undefined) {
+      img._zoomScale = 1.0;
+      img._panOffset = { x: 0, y: 0 };
+      img.style.transform = `translate(0px, 0px) scale(1)`;
+      img.style.cursor = 'grab';
+    }
 
-    img.addEventListener(
-      "wheel",
-      (e) => {
-        e.preventDefault();
-        if (Math.abs(e.deltaY) < 10) {
-          img._zoomScale += e.deltaY * -0.01;
-        } else {
-          img._zoomScale *= e.deltaY > 0 ? 0.95 : 1.05;
-        }
-        img._zoomScale = Math.max(0.5, Math.min(6.0, img._zoomScale));
-        img.style.transform = `translate(${img._panOffset.x}px, ${img._panOffset.y}px) scale(${img._zoomScale})`;
-      },
-      { passive: false },
-    );
+    if (img._zoomListenersAttached) return;
+    img._zoomListenersAttached = true;
+
+    img.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      if (Math.abs(e.deltaY) < 10) {
+        img._zoomScale += e.deltaY * -0.01;
+      } else {
+        img._zoomScale *= e.deltaY > 0 ? 0.95 : 1.05;
+      }
+      img._zoomScale = Math.max(1.0, Math.min(6.0, img._zoomScale));
+      img.style.transform = `translate(${img._panOffset.x}px, ${img._panOffset.y}px) scale(${img._zoomScale})`;
+    }, { passive: false });
 
     let dragging = false;
     let start = { x: 0, y: 0 };
+    
     img.addEventListener("mousedown", (e) => {
       if (img._zoomScale > 1.05) {
         dragging = true;
-        start = {
-          x: e.clientX - img._panOffset.x,
-          y: e.clientY - img._panOffset.y,
-        };
+        start = { x: e.clientX - img._panOffset.x, y: e.clientY - img._panOffset.y };
         img.style.cursor = "grabbing";
         e.preventDefault();
       }
     });
 
-    window.addEventListener("mousemove", (e) => {
+    // Event loops shifted natively onto the explicit element space rather than the window pipeline
+    img.addEventListener("mousemove", (e) => {
       if (!dragging) return;
       img._panOffset.x = e.clientX - start.x;
       img._panOffset.y = e.clientY - start.y;
       img.style.transform = `translate(${img._panOffset.x}px, ${img._panOffset.y}px) scale(${img._zoomScale})`;
     });
 
-    window.addEventListener("mouseup", () => {
+    img.addEventListener("mouseup", () => {
       dragging = false;
-      if (img) img.style.cursor = "";
+      if (img) img.style.cursor = img._zoomScale > 1.05 ? "grab" : "default";
+    });
+
+    let lastTap = 0;
+    const handleResetAction = (e) => {
+      e.stopPropagation();
+      img._zoomScale = 1.0;
+      img._panOffset = { x: 0, y: 0 };
+      img.style.transform = `translate(0px, 0px) scale(1)`;
+      img.style.cursor = "grab";
+    };
+
+    img.addEventListener("dblclick", handleResetAction);
+
+    img.addEventListener("touchend", (e) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      lastTap = currentTime;
+      if (tapLength < 300 && tapLength > 0) handleResetAction(e);
     });
   };
 
   async function loadLibraryDependency(ext) {
     if ((ext === "cb7" || ext === "7z") && !window.JS7z) {
       window.Module = window.Module || {};
-      window.Module.locateFile = (path) =>
-        path.endsWith(".wasm") ? "lib/7zz.wasm" : path;
+      window.Module.locateFile = (path) => path.endsWith(".wasm") ? "lib/7zz.wasm" : path;
       return new Promise((res, rej) => {
         const scr = document.createElement("script");
         scr.src = "lib/7zz.umd.js";
@@ -253,101 +291,67 @@ function initializeApp() {
     const ext = file.name.toLowerCase().split(".").pop();
     window.ui.resetUI();
     try {
-      if (window.utils)
-        window.utils.showProgress(10, "Loading core systems...");
+      if (window.utils) window.utils.showProgress(10, "Loading core systems...");
       await loadLibraryDependency(ext);
 
-      const targetStructure = await window.handleFileInput(
-        file,
-        window.utils ? window.utils.showProgress : () => {},
-      );
-      if (
-        targetStructure &&
-        targetStructure.entries &&
-        targetStructure.entries.length
-      ) {
+      const targetStructure = await window.handleFileInput(file, window.utils ? window.utils.showProgress : () => {});
+      if (targetStructure && targetStructure.entries && targetStructure.entries.length) {
         if (state.comicReader) state.comicReader.cleanup();
-
         state.comicReader = new window.ComicReader(targetStructure.entries);
-
         window.ui.showReader();
         await state.comicReader.displayPage(0);
       }
     } catch (err) {
-      if (window.utils)
-        window.utils.showError(
-          err.message || "Error processing comic book file.",
-        );
+      if (window.utils) window.utils.showError(err.message || "Error processing comic book file.");
     }
   }
 
-  // Explicit action listener to fold up all overlay headers simultaneously
   if (elements.hideOverlayBtn) {
     elements.hideOverlayBtn.onclick = (e) => {
       e.stopPropagation();
-      if (elements.navControls)
-        elements.navControls.classList.add("nav-hidden");
-      if (elements.systemControls)
-        elements.systemControls.classList.add("nav-hidden");
+      if (elements.navControls) elements.navControls.classList.add("nav-hidden");
+      if (elements.systemControls) elements.systemControls.classList.add("nav-hidden");
     };
   }
 
-  // Fullscreen action router tied cleanly inside the capsule hook
   if (elements.fullscreenBtn) {
     elements.fullscreenBtn.onclick = (e) => {
-      e.stopPropagation(); // Avoid popping the navigation layer down during toggle transitions
-      if (!document.fullscreenElement)
-        document.documentElement.requestFullscreen();
+      e.stopPropagation();
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
       else document.exitFullscreen();
     };
   }
 
-  // Tap background container anywhere to reset layout layers view status
   window.addEventListener("click", (e) => {
     if (!state.comicReader) return;
-
-    // Guard: Prevent tapping inside menu decks from triggering layout flashes
     if (e.target.closest('#navControls') || e.target.closest('#systemControls')) return;
 
-    const isHidden =
-      elements.navControls &&
-      elements.navControls.classList.contains("nav-hidden");
-
+    const isHidden = elements.navControls && elements.navControls.classList.contains("nav-hidden");
     if (isHidden) {
-      if (elements.navControls)
-        elements.navControls.classList.remove("nav-hidden");
-      if (elements.systemControls)
-        elements.systemControls.classList.remove("nav-hidden");
+      if (elements.navControls) elements.navControls.classList.remove("nav-hidden");
+      if (elements.systemControls) elements.systemControls.classList.remove("nav-hidden");
     }
   });
 
-  if (elements.leftArrow)
-    elements.leftArrow.onclick = () => navigation.goToPrevPage();
-  if (elements.rightArrow)
-    elements.rightArrow.onclick = () => navigation.goToNextPage();
+  if (elements.leftArrow) elements.leftArrow.onclick = () => navigation.goToPrevPage();
+  if (elements.rightArrow) elements.rightArrow.onclick = () => navigation.goToNextPage();
 
   if (elements.dropZone) {
-    elements.dropZone.ondragover = (e) => {
-      e.preventDefault();
-      elements.dropZone.classList.add("dragover");
-    };
-    elements.dropZone.ondragleave = () =>
-      elements.dropZone.classList.remove("dragover");
+    elements.dropZone.ondragover = (e) => { e.preventDefault(); elements.dropZone.classList.add("dragover"); };
+    elements.dropZone.ondragleave = () => elements.dropZone.classList.remove("dragover");
     elements.dropZone.ondrop = (e) => {
       e.preventDefault();
       elements.dropZone.classList.remove("dragover");
-      if (e.dataTransfer.files.length)
-        routeArchiveProcessing(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files.length) routeArchiveProcessing(e.dataTransfer.files[0]);
     };
     elements.dropZone.onclick = (e) => {
-      if (e.target === elements.dropZone && elements.fileInput)
-        elements.fileInput.click();
+      if (e.target === elements.dropZone && elements.fileInput) elements.fileInput.click();
     };
   }
 
   if (elements.fileInput) {
     elements.fileInput.onchange = () => {
-      if (elements.fileInput.files.length)
+      if (elements.fileInput.files && elements.fileInput.files.length)
         routeArchiveProcessing(elements.fileInput.files[0]);
     };
   }

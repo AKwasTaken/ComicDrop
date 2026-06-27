@@ -27,10 +27,6 @@ class ComicReader {
     }
   }
 
-  /**
-   * Tight Single-Page Memory Management
-   * Keeps the current page, 1 page behind, and 2 pages ahead.
-   */
   manageMemoryBuffer(activeIndex) {
     for (const cachedIndex of this.blobCache.keys()) {
       if (cachedIndex < activeIndex - 1 || cachedIndex > activeIndex + 2) {
@@ -67,6 +63,7 @@ class ComicReader {
     hiddenCanvas.alt = `Page ${index + 1}`;
 
     hiddenCanvas.onload = () => {
+      // FIX: Passing true forces the zoom engine to zero out scales/offsets for the incoming page
       if (typeof window.setupZoomHandlers === 'function') {
         window.setupZoomHandlers(hiddenCanvas, true);
       }
