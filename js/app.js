@@ -72,17 +72,16 @@ function initializeApp() {
       if (elements.readerContainer)
         elements.readerContainer.style.display = "flex";
 
-      // --- iOS Safari Fullscreen Feature Guard ---
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      
+      // --- Modern Capability Verification Guard ---
       if (elements.systemControls) {
         elements.systemControls.style.display = "inline-flex";
         
-        // Hide the fullscreen button and layout divider completely if on iOS
+        // Query structural browser level support hooks directly
+        const canFullscreen = document.fullscreenEnabled || document.webkitFullscreenEnabled;
         const fsBtn = document.getElementById("fullscreenBtn");
         const divider = document.querySelector(".capsule-divider");
         
-        if (isIOS) {
+        if (!canFullscreen) {
           if (fsBtn) fsBtn.style.display = "none";
           if (divider) divider.style.display = "none";
         } else {
@@ -110,11 +109,15 @@ function initializeApp() {
 
       if (elements.readerContainer)
         elements.readerContainer.style.display = "none";
-      if (elements.leftArrow) elements.leftArrow.style.display = "none";
-      if (elements.rightArrow) elements.rightArrow.style.display = "none";
-
+      
       if (elements.systemControls)
         elements.systemControls.style.display = "none";
+
+      // Restore button display visibility baselines
+      const fsBtn = document.getElementById("fullscreenBtn");
+      const divider = document.querySelector(".capsule-divider");
+      if (fsBtn) fsBtn.style.display = "none";
+      if (divider) divider.style.display = "none";
 
       if (window.utils) window.utils.hideProgress();
     },
