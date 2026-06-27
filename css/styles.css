@@ -168,6 +168,74 @@ main {
   word-wrap: break-word;
 }
 
+/* --- Unified Top Center Controls --- */
+.top-control-capsule {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  display: inline-flex;
+  align-items: center;
+  
+  background: rgba(20, 20, 20, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--border-radius-large);
+  padding: 0.4rem 0.8rem;
+  z-index: 1003;
+  backdrop-filter: blur(5px);
+  box-shadow: var(--shadow);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-in-out;
+}
+
+/* Individual inner buttons */
+.top-control-capsule button {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--border-radius);
+  transition: background 0.2s, color 0.2s;
+}
+
+.top-control-capsule button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--accent-color);
+}
+
+/* Elegant line dividing the actions */
+.capsule-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 0.4rem;
+}
+
+/* Global visibility slide handler */
+.top-control-capsule.nav-hidden {
+  transform: translateX(-50%) translateY(-100px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.top-hide-ui-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent-color);
+}
+
+/* Master visibility slide configurations */
+.top-hide-ui-btn.nav-hidden {
+  transform: translateX(-50%) translateY(-100px);
+  opacity: 0;
+  pointer-events: none;
+}
+
 
 .drop-zone {
   display: flex;
@@ -300,7 +368,16 @@ body.comic-active #dropZone {
   transition: var(--transition-slow);
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.13);
+  transition: transform 0.25s ease-in-out, opacity 0.2s ease-in-out;
 }
+
+.nav-controls.nav-hidden {
+  transform: translateX(-50%) translateY(15vh);
+  opacity: 0;
+  pointer-events: none; /* Crucial: Allows swipes/pans to pass right through to the comic page */
+}
+
+
 
 /* Navigation buttons */
 .nav-controls button {
@@ -473,23 +550,6 @@ body.comic-active #dropZone {
   backdrop-filter: var(--backdrop-blur);
 }
 
-/* File name bar styles */
-#fileNameBar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1002;
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  font-size: 1.3em;
-  font-weight: 400;
-  text-align: center;
-  padding: 12px 0 8px 0;
-  display: none;
-  backdrop-filter: blur(5px);
-  pointer-events: none;
-}
 
 /* Responsive design */
 @media (max-width: 700px) {
@@ -553,52 +613,7 @@ body.comic-active #dropZone {
   margin-top: 0 !important;
   padding-top: 0 !important;
   display: block;
-} 
-
-/* Spread view toggle button */
-#spreadToggleBtn {
-  background: none;
-  border: none;
-  color: var(--accent-color);
-  font-size: 1.2rem;
-  border-radius: 50%;
-  width: 2.2rem;
-  height: 2.2rem;
-  cursor: pointer;
-  transition: var(--transition);
-  outline: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 1.2em;
-}
-#spreadToggleBtn.active {
-  background: var(--accent-color);
-  color: #fff;
-}
-#spreadToggleBtn:hover {
-  background: rgba(0, 184, 148, 0.12);
-  color: var(--accent-hover);
-}
-
-/* Spread mode wrapper sizing */
-.spread-view-wrapper {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  width: 100vw;
-  height: 100vh;
-  gap: 4px !important; /* Slight, clean gap between distinct sheets */
-}
-
-/* Constrained rules when active inside spread layout wrapper */
-.spread-view-wrapper img {
-  max-width: calc(50vw - 4px) !important;
-  max-height: 100vh !important;
-  width: auto !important;
-  height: auto !important;
-}
+}   
 
 /* --- Seamless Transition Buffer Layers --- */
 
@@ -628,9 +643,6 @@ body.comic-active .page-stage img {
   max-height: 100vh;
 }
 
-body.comic-active .spread-view-wrapper {
-  display: none !important; /* Cleans up old selector references if present */
-}
 
 /* Adjust spread mode inner limits directly via stage layout descriptors */
 .page-stage[style*="display: flex"] img {
