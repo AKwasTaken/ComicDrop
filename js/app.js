@@ -72,11 +72,24 @@ function initializeApp() {
       if (elements.readerContainer)
         elements.readerContainer.style.display = "flex";
 
-      if (elements.leftArrow) elements.leftArrow.style.display = "block";
-      if (elements.rightArrow) elements.rightArrow.style.display = "block";
-
-      if (elements.systemControls)
+      // --- iOS Safari Fullscreen Feature Guard ---
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      
+      if (elements.systemControls) {
         elements.systemControls.style.display = "inline-flex";
+        
+        // Hide the fullscreen button and layout divider completely if on iOS
+        const fsBtn = document.getElementById("fullscreenBtn");
+        const divider = document.querySelector(".capsule-divider");
+        
+        if (isIOS) {
+          if (fsBtn) fsBtn.style.display = "none";
+          if (divider) divider.style.display = "none";
+        } else {
+          if (fsBtn) fsBtn.style.display = "inline-flex";
+          if (divider) divider.style.display = "block";
+        }
+      }
 
       this.renderNavControls();
     },

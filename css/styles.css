@@ -237,7 +237,7 @@ p {
   background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-hover) 100%);
   border-radius: 3px;
   width: 0%;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.4s ease-in-out;
   flex: 1;
   box-shadow: 0 0 8px rgba(0, 184, 148, 0.3);
 }
@@ -379,6 +379,11 @@ p {
   transform: translateX(-50%) translateY(0);
   display: inline-flex;
   align-items: center;
+  
+  width: max-content !important;
+  max-width: 95vw !important;
+  white-space: nowrap !important;
+  
   background: rgba(20, 20, 20, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: var(--border-radius-large);
@@ -386,9 +391,8 @@ p {
   z-index: 1003;
   backdrop-filter: blur(5px);
   box-shadow: var(--shadow);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 }
-
 .top-control-capsule button {
   background: none;
   border: none;
@@ -434,11 +438,11 @@ p {
   pointer-events: none;
 }
 
-/* --- Bottom Floating Actions Deck --- */
 .nav-controls {
   position: absolute;
   left: 50%;
-  bottom: 3vh;
+  bottom: calc(5vh + env(safe-area-inset-bottom)) !important;
+  
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -449,16 +453,15 @@ p {
   padding: 0.6rem 1rem;
   box-shadow: var(--shadow);
   z-index: 20;
-  opacity: 1; 
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.13);
   transition: transform 0.25s ease-in-out, opacity 0.2s ease-in-out;
 }
 
 .nav-controls.nav-hidden {
-  transform: translateX(-50%) translateY(15vh);
+  transform: translateX(-50%) translateY(25vh) !important;
   opacity: 0;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .nav-controls button {
