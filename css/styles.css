@@ -242,19 +242,21 @@ p {
   box-shadow: 0 0 8px rgba(0, 184, 148, 0.3);
 }
 
-.nav-controls button img {
+.nav-controls button svg {
   display: block;
-  opacity: 0.9;
-  transition: transform 0.2s;
+  width: 14px;  
+  height: 14px;
+  margin: auto;
+  fill: rgba(255, 255, 255, 0.85); 
+  transition: fill 0.2s, transform 0.2s;
 }
 
-.nav-controls button:hover:not(:disabled) img {
-  filter: drop-shadow(0 0 4px rgba(0, 184, 148, 0.4));
+.nav-controls button:hover:not(:disabled) svg {
+  fill: var(--accent-color) !important;
 }
 
-.nav-controls button:disabled img {
-  opacity: 0.3;
-  filter: grayscale(100%);
+.nav-controls button:disabled svg {
+  fill: rgba(255, 255, 255, 0.25) !important;
 }
 
 /* ==========================================================================
