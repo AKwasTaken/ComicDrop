@@ -27,6 +27,8 @@ Unlike traditional web applications that upload your archives to a backend serve
 * **Absolute Privacy:** Your digital comic collection remains 110% private. Because there is no remote server processing the files, your data is completely secure from external trackers or cloud storage leaks.
 * **Pristine Resource Management:** The app leverages **lazy-extraction matching** combined with a **sliding-window cache memory model**. Instead of inflating a massive 500MB archive all at once into your RAM, it keeps only your current page, one preceding page, and two upcoming pages decompressed. Old pages have their memory blobs instantly revoked, keeping mobile browsers fast and stable.
 
+![Preview Image](https://akwastaken.github.io/dist/projects/ComicDrop/comicdrop_preview.png)
+
 ---
 
 ## Features
