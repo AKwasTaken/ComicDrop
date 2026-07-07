@@ -1,4 +1,20 @@
-# ComicDrop
+<div align="center">
+<pre style="background: transparent; border: none; padding: 0; margin: 0;">
+   █████████     ███████    ██████   ██████ █████   █████████  ██████████   ███████████      ███████    ███████████ 
+  ███░░░░░███  ███░░░░░███ ░░██████ ██████ ░░███   ███░░░░░███░░███░░░░███ ░░███░░░░░███   ███░░░░░███ ░░███░░░░░███
+ ███     ░░░  ███     ░░███ ░███░█████░███  ░███  ███     ░░░  ░███   ░░███ ░███    ░███  ███     ░░███ ░███    ░███
+░███         ░███      ░███ ░███░░███ ░███  ░███ ░███          ░███    ░███ ░██████████  ░███      ░███ ░██████████ 
+░███         ░███      ░███ ░███ ░░░  ░███  ░███ ░███          ░███    ░███ ░███░░░░░███ ░███      ░███ ░███░░░░░░  
+░░███     ███░░███     ███  ░███      ░███  ░███ ░░███     ███ ░███    ███  ░███    ░███ ░░███     ███  ░███        
+ ░░█████████  ░░░███████░   █████     █████ █████ ░░█████████  ██████████   █████   █████ ░░░███████░   █████       
+  ░░░░░░░░░     ░░░░░░░    ░░░░░     ░░░░░ ░░░░░   ░░░░░░░░░  ░░░░░░░░░░   ░░░░░   ░░░░░    ░░░░░░░    ░░░░░        
+</pre>
+</div>
+
+
+<div align="center">
+<a href="https://www.codefactor.io/repository/github/akwastaken/comicdrop/overview/main"><img src="https://www.codefactor.io/repository/github/akwastaken/comicdrop/badge/main" alt="CodeFactor" /></a>
+</div>
 
 A lightning-fast, privacy-focused, browser-based comic book reader designed for seamless digital archive viewing. Built entirely around an **offline-first, client-side** architecture, ComicDrop processes, unpacks, and caches archives completely within the browser environment, meaning your data never leaves your device.
 
